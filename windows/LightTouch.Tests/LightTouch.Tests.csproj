@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The app's platform-neutral logic (boot recipes, packed devices, identities), compiled from its sources for
+       net8.0, so `dotnet test` runs on any OS; the WinForms windows stay in LightTouch.csproj. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../LightTouch/Device/*.cs" LinkBase="App/Device" />
+    <Compile Include="../LightTouch/Library/*.cs" LinkBase="App/Library" />
+    <Compile Include="../LightTouch/Native/Qemu.cs" LinkBase="App/Native" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+</Project>

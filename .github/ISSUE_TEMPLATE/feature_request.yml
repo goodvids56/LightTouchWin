@@ -1,14 +1,14 @@
 name: Idea
-description: A change to Light Touch on the Mac for a device it already runs
+description: A change to Light Touch for Windows for a device it already runs
 labels: [enhancement]
 body:
   - type: checkboxes
     id: scope
     attributes:
       label: Scope
-      description: Light Touch is a Mac app for the devices listed in the [README](https://github.com/samhenrigold/LightTouchMac#scope). Requests for other platforms (Windows, Linux, Android, iOS, the web) or other devices (iPod classic, newer iPhones and iPads) will be closed.
+      description: This fork brings Light Touch to Windows for the devices listed in the [README](https://github.com/goodvids56/LightTouchWin#devices). Requests for the Mac app go to [LightTouchMac](https://github.com/samhenrigold/LightTouchMac).
       options:
-        - label: This is for Light Touch on the Mac, for a device and iOS version it already supports.
+        - label: This is for Light Touch on Windows, for a device and iOS version Light Touch supports.
           required: true
   - type: textarea
     id: idea

@@ -87,10 +87,10 @@ index 62c2a72..b5f85dc 100644
      }
      return identity[0] ? identity : NULL;
 diff --git a/hw/arm/ipod_touch_fmss.c b/hw/arm/ipod_touch_fmss.c
-index fd22893..f52ea74 100644
+index fd22893..345f3da 100644
 --- a/hw/arm/ipod_touch_fmss.c
 +++ b/hw/arm/ipod_touch_fmss.c
-@@ -7,7 +7,28 @@
+@@ -7,7 +7,38 @@
  #include "qapi/error.h"
  #include "system/runstate.h"
  #include "system/address-spaces.h"
@@ -110,6 +110,16 @@ index fd22893..f52ea74 100644
 +}
 +#define FMSS_MAP_FAILED NULL
 +#define fmss_unmap(p, size) UnmapViewOfFile(p)
++/* A page file replaces its older self, as rename(2) does; the CRT's rename refuses an existing target. */
++static int fmss_rename(const char *from, const char *to)
++{
++    if (MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
++        return 0;
++    }
++    errno = GetLastError() == ERROR_ACCESS_DENIED ? EACCES : EIO;
++    return -1;
++}
++#define rename(from, to) fmss_rename(from, to)
 +#else
  #include <sys/mman.h>
 +#define fmss_map_readonly(fd) mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)
@@ -119,7 +129,7 @@ index fd22893..f52ea74 100644
  #include <sys/stat.h>
  #include "trace.h"
  #include "hw/trace-printf.h"
-@@ -708,15 +729,15 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+@@ -708,15 +739,15 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
      if (fd < 0) {
          return;
      }
@@ -138,7 +148,7 @@ index fd22893..f52ea74 100644
          return;
      }
  
-@@ -726,7 +747,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+@@ -726,7 +757,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
          fprintf(stderr, "[fmss] %s has %u+%u byte pages, expected %u+%u\n",
                  s->nand_path, page_size, spare_size,
                  NAND_BYTES_PER_PAGE, NAND_BYTES_PER_SPARE);
@@ -147,7 +157,7 @@ index fd22893..f52ea74 100644
          return;
      }
  
-@@ -746,7 +767,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+@@ -746,7 +777,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
          fprintf(stderr, "[fmss] packed NAND %s is truncated (index wants %zu of "
                  "%zu bytes); ignoring it\n", s->nand_path, index_bytes,
                  (size_t)st.st_size - 24);
@@ -156,6 +166,54 @@ index fd22893..f52ea74 100644
          return;
      }
  
+diff --git a/hw/arm/ipod_touch_nor_spi.c b/hw/arm/ipod_touch_nor_spi.c
+index ac80569..9d17be4 100644
+--- a/hw/arm/ipod_touch_nor_spi.c
++++ b/hw/arm/ipod_touch_nor_spi.c
+@@ -111,6 +111,31 @@ static void initialize_nor(IPodTouchNORSPIState *s)
+     }
+ }
+ 
++#ifdef _WIN32
++/* Windows' stat() has no inode (st_ino is 0 for every file): the volume serial and file index say it. */
++static bool nor_same_file(const char *a, const char *b)
++{
++    BY_HANDLE_FILE_INFORMATION ia, ib;
++    bool same = false;
++    HANDLE ha = CreateFileA(a, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
++                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
++    HANDLE hb = CreateFileA(b, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
++                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
++    if (ha != INVALID_HANDLE_VALUE && hb != INVALID_HANDLE_VALUE &&
++        GetFileInformationByHandle(ha, &ia) && GetFileInformationByHandle(hb, &ib)) {
++        same = ia.dwVolumeSerialNumber == ib.dwVolumeSerialNumber &&
++               ia.nFileIndexHigh == ib.nFileIndexHigh && ia.nFileIndexLow == ib.nFileIndexLow;
++    }
++    if (ha != INVALID_HANDLE_VALUE) {
++        CloseHandle(ha);
++    }
++    if (hb != INVALID_HANDLE_VALUE) {
++        CloseHandle(hb);
++    }
++    return same;
++}
++#endif
++
+ void ipod_touch_nor_spi_open_overlay(IPodTouchNORSPIState *s, const char *path, Error **errp)
+ {
+     struct stat base, writable;
+@@ -125,7 +150,11 @@ void ipod_touch_nor_spi_open_overlay(IPodTouchNORSPIState *s, const char *path,
+             error_setg_errno(errp, errno, "base NOR image must exist");
+             return;
+         }
++#ifdef _WIN32
++        if (nor_same_file(s->nor_path, path)) {
++#else
+         if (base.st_dev == writable.st_dev && base.st_ino == writable.st_ino) {
++#endif
+             error_setg(errp, "nor-rw must be a private copy, not the base NOR image");
+             return;
+         }
 diff --git a/hw/arm/ipod_touch_tcp_usb.c b/hw/arm/ipod_touch_tcp_usb.c
 index a1a91b2..5455171 100644
 --- a/hw/arm/ipod_touch_tcp_usb.c

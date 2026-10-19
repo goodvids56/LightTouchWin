@@ -1,23 +1,55 @@
-# Light Touch
+# Light Touch for Windows
+
+> **This is a fork.** LightTouchWin is a Windows port of [Light Touch](https://github.com/samhenrigold/LightTouchMac)
+> by Sam Henri Gold, which runs on the Mac. The emulator, the device preparation and nearly all of the work are the
+> original project's; this fork adds a Windows build (`windows/`). Report problems with the Windows build here, and
+> problems with the Mac app [upstream](https://github.com/samhenrigold/LightTouchMac/issues).
 
 Built with use from agentic coding products.
 
-Light Touch runs classic Apple devices on your Mac: the original iPhone and iPod touch through the
-iPhone 4, iPod touch 4 and the first iPad, on the iPhone OS and iOS versions they shipped with. Each
-device runs Apple's own firmware in an emulator, so it behaves like the real thing: the Home screen,
-the built-in apps, App Store apps and games of the era, Wi-Fi, music and photos, and on the iPhones a
-simulated cellular network for calls and texts.
+Light Touch runs classic Apple devices on your PC: the original iPhone and iPod touch through the iPhone 4, iPod
+touch 4 and the first iPad, on the iPhone OS and iOS versions they shipped with. Each device runs Apple's own
+firmware in an emulator ([qemu-ios](https://github.com/samhenrigold/qemu-ios)), so it behaves like the real thing:
+the Home screen, the built-in apps, App Store apps and games of the era, Wi-Fi, music and photos.
 
 ## Download
 
-Get the latest notarized build from [Releases](https://github.com/samhenrigold/LightTouchMac/releases),
-unzip it, and move **Light Touch.app** to Applications.
+Get `LightTouch-windows-x64.zip` from [Releases](https://github.com/goodvids56/LightTouchWin/releases) (or from the
+latest run of the **Windows build** workflow under Actions), unzip it anywhere, and run **LightTouch.exe**.
 
-- macOS 14.4 or later, on Apple silicon or Intel.
-- Light Touch includes a ready-to-use iPod touch (2nd gen) on iOS 3.1.3. For every other device and
-  version it downloads Apple's original firmware (from Apple, or from public archives for builds Apple
-  no longer hosts), checks it against its published hash, and prepares the device on your Mac. You can
-  also import an IPSW you already have.
+- Windows 10 or 11, 64-bit (x64). Nothing to install: the folder carries everything, .NET included.
+- Keep the folder's files together: LightTouch.exe loads the emulator, `qemu-arm.dll`, from beside it.
+
+## Getting a device
+
+The Windows build doesn't prepare devices from Apple's IPSWs yet (the Mac app's preparer, FirmwareKit, is
+macOS-only so far). There are two ways in:
+
+1. **The built-in iPod touch (2nd generation) on iOS 3.1.3.** Download `LightTouchMac-universal.zip` from
+   [Light Touch for Mac's releases](https://github.com/samhenrigold/LightTouchMac/releases) (no Mac needed, and no need
+   to unzip it), then choose **Add ▸ Import from Light Touch for Mac…** and pick the zip. Light Touch unpacks the iPod,
+   gives it an identity of its own, and installs the SecureROMs the emulator boots.
+2. **A device prepared on a Mac** with `firmwarekit create … --out FOLDER` (see [CONTRIBUTING.md](CONTRIBUTING.md)):
+   copy the folder to the PC and choose **Add ▸ Import Prepared Device…**.
+
+## Using a device
+
+Double-click a device to start it; each runs in its own window and process.
+
+| Input | Does |
+|---|---|
+| Click and drag on the screen | Touch (one finger); **Alt**-drag pinches with a mirrored second finger |
+| Typing | Goes to the device |
+| **Ctrl+H** / **Ctrl+L** | Home / Sleep/Wake |
+| **Ctrl+Up** / **Ctrl+Down** | Volume |
+| **Ctrl+Left** / **Ctrl+Right** | Rotate |
+| **Ctrl+Shift+Z** | Shake |
+| **Ctrl+V** | Paste the PC's clipboard text into the device (and text copied in the device lands on the PC's clipboard) |
+| **Ctrl+S** | Screenshot, to `Pictures\Light Touch` |
+
+Closing the window stops the device the way the Mac app does (the VM pauses, which flushes its storage, then quits).
+**Device ▸ Erase All Content and Settings** starts it over from its base. Devices, logs and settings live in
+`%LOCALAPPDATA%\LightTouch` (`LTM_STATE_DIR` moves them).
 
 ## Devices
 
@@ -32,49 +64,51 @@ unzip it, and move **Light Touch.app** to Applications.
 | iPod touch (4th gen) | iOS 4.1 to 6.1.6, plus the iOS 6.0 beta |
 | iPad | iPhone OS 3.2 to iOS 5.1.1 |
 
-Most builds are marked experimental: they boot and pass their checks, but haven't been through as much
-use as the stable ones. Turn on **Show experimental** in the Add Device sheet to see them.
+These are the boards and versions Light Touch supports. The Windows emulator builds all eight machines and boots
+prepared devices of each with the Mac's boot recipes; the one checked end to end so far is the built-in iPod touch
+(2nd gen) on iOS 3.1.3: it boots to the lock screen, unlocks, and runs its apps with touch, typing, rotation and a
+clean stop.
 
-## Scope
+## What the Windows build has, and what it doesn't yet
 
-Light Touch is a Mac app for the devices in the table above, and that's all it will be. These aren't
-planned, and requests for them will be closed:
+Has: the device library, importing the built-in iPod or prepared devices, the device window (touch, buttons,
+keyboard, rotation, shake, pasteboard both ways, screenshots), Wi-Fi through the emulator's user networking
+(off the PC's local network unless **Settings ▸ Attach to Local Network** is on), sound through DirectSound, and
+the iOS 5 Setup flow's offline start (**Internet** in the device's toolbar opens the network once Setup is done).
 
-- Versions for Windows, Linux, Android, iOS, iPadOS or the web, including companion or remote apps.
-- Other devices: iPod classic, nano or shuffle, Apple TV, Apple Watch, or any iPhone, iPod touch or
-  iPad newer than the ones listed.
-- iOS versions those devices never ran.
-
-Bug reports and ideas for the listed devices on the Mac are welcome.
+Not yet: preparing devices from IPSWs, app (.ipa) installs and the other USB services (the Mac app's usbmuxd and
+libimobiledevice helper), media import, the web proxy that lets the old devices' TLS reach today's HTTPS, the
+host GL bridge (guests fall back to their own software renderer), the 3D bezels, and recording.
 
 ## Building from source
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). The tests come in three tiers:
+The Windows build cross-compiles from Linux; see [windows/README.md](windows/README.md).
 
 ```sh
-# no emulator: the packages' Swift Testing suites
-xcodebuild test -workspace LightTouchMac.xcworkspace -scheme LightTouchMac -testPlan Unit
-# emulator sessions, headless and silent, on a prepared device (sessions --help lists the checks)
-swift run --package-path tests/sessions sessions single PREPARED_BASE
-# a built app: signatures, bundle, closure and the built-in iPod's boot
-TEST_RUNNER_LTM_RELEASE_APP="path/to/Light Touch.app" xcodebuild test -workspace LightTouchMac.xcworkspace \
-    -scheme LightTouchMac -testPlan Release
+windows/build.sh            # the emulator (in a Fedora mingw-w64 container) and the app, into windows/dist/
 ```
+
+CI (`.github/workflows/windows.yml`) runs the same steps on every change under `windows/` and attaches the zip to a
+release for each `v*` tag.
+
+The rest of the repository is the upstream Mac app, kept as it is so the fork can follow upstream; its build
+and tests are in [CONTRIBUTING.md](CONTRIBUTING.md) and need a Mac with Xcode.
 
 ## License and credits
 
 Light Touch is free software under the GNU General Public License, version 2 or (at your option) any
-later version; see [LICENSE](LICENSE).
+later version; see [LICENSE](LICENSE). The Windows build is too.
 
 It stands on a lot of other work:
 
+- [Light Touch](https://github.com/samhenrigold/LightTouchMac) by Sam Henri Gold, of which this is a fork.
 - [qemu-ios](https://github.com/samhenrigold/qemu-ios), the emulator, built on [QEMU](https://www.qemu.org)
-  and grown out of [devos50's qemu-ios](https://github.com/devos50/qemu-ios) (GPL-2.0).
-- [libimobiledevice](https://libimobiledevice.org), libusbmuxd, libplist, libtatsu and a
-  [usbmuxd fork](https://github.com/samhenrigold/usbmuxd) for talking to the devices.
-- iBoot32Patcher, FFmpeg, GLib, libslirp, PCRE2, pixman, OpenSSL, and Unrar.swift with RARLAB's UnRAR.
+  and grown out of [devos50's qemu-ios](https://github.com/devos50/qemu-ios) (GPL-2.0). The Windows build applies
+  `windows/patches/qemu-ios/` to the pinned commit.
+- FFmpeg, GLib, libslirp, PCRE2, pixman, OpenSSL and zlib, as built by Fedora's mingw-w64 packages or from the
+  pinned sources; the Mac app also uses libimobiledevice, libusbmuxd, libplist, libtatsu, a
+  [usbmuxd fork](https://github.com/samhenrigold/usbmuxd), iBoot32Patcher and Unrar.swift with RARLAB's UnRAR.
 
-Each bundled component's license (and, for GPL and LGPL components, where to get its source) is in
-the app under `Contents/Resources/licenses` and in **About Light Touch**.
+The Windows zip carries each bundled component's license, and where to get its source, under `licenses\`.
 
 iPhone, iPod touch and iPad are trademarks of Apple Inc. Light Touch is not affiliated with Apple.
