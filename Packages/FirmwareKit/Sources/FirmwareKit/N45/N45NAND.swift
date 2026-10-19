@@ -1,5 +1,5 @@
-// N45NAND: the iPod touch 1G page directory (bank{0..7}/<page>.page, 2048 data + 64 spare bytes each) that
-// qemu-ios s5l8900_fmc.c serves: the legacy VFL/FTL layout of devos50's qemu-ios-generate-nand (main, the 1G
+// N45NAND: the iPod touch 1G's and the original iPhone's NAND (eight or four banks of 2048 data + 64 spare-byte pages)
+// that qemu-ios s5l8900_fmc.c serves, written as an image store (PageNANDImage.s5l8900): the legacy VFL/FTL layout of devos50's qemu-ios-generate-nand (main, the 1G
 // generate_nand.c: FIL id, DEVICEINFOBBT, VFL context at block 35, the FTL from physical block 201 on, one HFS+
 // partition behind an MBR + GPT), with what that tool left for later:
 //
@@ -227,9 +227,7 @@ public enum N45NAND {
         return pages
     }
 
-    static func path(_ out: URL, _ p: Page) -> URL { out.appendingPathComponent("bank\(p.bank)/\(p.page).page") }
-
-    /// The page directory for a flat HFS+ volume: metadata pages, then every page of every logical block the
+    /// The image store (PageNANDImage.s5l8900) for a flat HFS+ volume: metadata pages, then every page of every logical block the
     /// volume spans, zeros included, as a restore writes the whole image. The model reads a page never
     /// programmed as erased, and the FTL fails the read of an erased page it maps (the kernel probes the
     /// volume's last pages, zeros in a fresh image).
@@ -245,11 +243,9 @@ public enum N45NAND {
         guard blocks <= mappedLBNs else {
             throw FirmwareError(.unsupported, "a \(size)-byte volume is larger than the NAND's mapped logical blocks")
         }
-        for b in 0..<banks {
-            try fm.createDirectory(at: out.appendingPathComponent("bank\(b)"), withIntermediateDirectories: true)
-        }
+        let store = try PageNANDImage.Store(create: out, .s5l8900(banks: banks))
         let meta = metadataPages(fsPages: fsPages, filID: filID, banks: banks, bbtMap: bbtMap)
-        for (p, d) in meta { try Data(d).write(to: path(out, p)) }
+        for (p, d) in meta { try store.write(p, d) }
         let f = try FileHandle(forReadingFrom: volume)
         defer { try? f.close() }
         var written = 0
@@ -259,14 +255,22 @@ public enum N45NAND {
             try f.seek(toOffset: UInt64((first + skip - firstLBA) * page))
             var data = try f.read(upToCount: (pagesPerSuperblock - skip) * page) ?? Data()
             data.append(Data(count: (pagesPerSuperblock - skip) * page - data.count))
+            let bytes = [UInt8](data)
             for i in 0..<pagesPerSuperblock - skip {
                 let lpn = first + skip + i
-                try (data[data.startIndex + i * page..<data.startIndex + (i + 1) * page] + dataSpare(lpn)).write(
-                    to: path(out, location(lpn: lpn, banks: banks))
+                try store.write(
+                    location(lpn: lpn, banks: banks),
+                    Array(bytes[i * page..<(i + 1) * page]) + dataSpare(lpn)
                 )
                 written += 1
             }
         }
+        try store.sync()
         return (written, meta.count)
     }
+}
+
+extension PageNANDImage.Store {
+    func read(_ p: N45NAND.Page) throws -> [UInt8] { try read(p.bank, p.page) }
+    func write(_ p: N45NAND.Page, _ record: [UInt8]) throws { try write(p.bank, p.page, record) }
 }

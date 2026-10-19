@@ -170,6 +170,9 @@ public enum FirmwareCommand {
             /// 2.0 and later: what the jailbreak option adds (begin, mount, the edits, commit), Cydia's bootstrap kept
             /// beside the decrypt cache --cache.
             case jailbreak
+            /// 1.x: --prefs, a plist array of {domain, key, value} (no value: remove the key), into the user's
+            /// Preferences (begin, mount, the plists, commit).
+            case preferences
         }
         @Option public var device: String
         @Option public var action: Action
@@ -178,6 +181,7 @@ public enum FirmwareCommand {
         @Option(help: "A DER certificate, for trust-anchor.") public var cert: String? = nil
         @Option public var mountPoint: String? = nil
         @Option(help: "The decrypt cache, for jailbreak.") public var cache: String? = nil
+        @Option(help: "A plist of preference changes, for preferences.") public var prefs: String? = nil
 
         public init() {}
         public init(
@@ -187,7 +191,8 @@ public enum FirmwareCommand {
             recordPolicy: RecordPolicy,
             cert: URL? = nil,
             mountPoint: URL? = nil,
-            cache: URL? = nil
+            cache: URL? = nil,
+            prefs: URL? = nil
         ) {
             self.device = device.path
             self.action = action
@@ -196,6 +201,7 @@ public enum FirmwareCommand {
             self.cert = cert?.path
             self.mountPoint = mountPoint?.path
             self.cache = cache?.path
+            self.prefs = prefs?.path
         }
 
         public var arguments: [String] {
@@ -203,6 +209,7 @@ public enum FirmwareCommand {
                 + options([
                     "device": device, "action": action.rawValue, "session": session,
                     "record-policy": recordPolicy.rawValue, "cert": cert, "mount-point": mountPoint, "cache": cache,
+                    "prefs": prefs,
                 ])
         }
     }

@@ -29,24 +29,22 @@ import Testing
         return (base, Array(vol[0..<Int(blocks) * 4096]))
     }
 
-    static func put(_ root: URL, vpn: Int, _ data: [UInt8], _ spare: [UInt8]) throws {
-        let p = N45NAND.location(vpn: vpn, banks: banks)
-        let d = root.appendingPathComponent("bank\(p.bank)")
-        try FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
-        try Data(data + spare).write(to: d.appendingPathComponent("\(p.page).page"))
-    }
-
     static func le(_ b: inout [UInt8], _ o: Int, _ v: Int, _ n: Int) {
         for k in 0..<n { b[o + k] = UInt8(v >> (8 * k) & 0xFF) }
     }
 
-    /// What a booted guest leaves in the overlay, built by hand: the context moved to virtual block 3 (lower usnDec
+    /// What a booted guest leaves in the device's live NAND (the overlay's clone of the base's image), built by hand:
+    /// the context moved to virtual block 3 (lower usnDec
     /// than the prepared one), logical block 0 remapped to virtual block 30 with page 10 changed, and a log block
     /// (virtual block 31) holding a newer copy of logical block 1's page 5. `clean: false` ends the context block
     /// on a map page instead of the context.
     static func booted(_ ovl: URL, _ base: URL, clean: Bool = true, changeData: Bool = true) throws {
-        let fm = FileManager.default
-        try fm.createDirectory(at: ovl, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: ovl, withIntermediateDirectories: true)
+        let live = try PageNANDImage.Store(PreparedDeviceBoot.liveNAND(base: base, overlay: ovl), writable: true)
+        func put(_: URL, vpn: Int, _ data: [UInt8], _ spare: [UInt8]) throws {
+            try live.write(N45NAND.location(vpn: vpn, banks: banks), data + spare)
+        }
+        let read = try N45FTL.reader(PageNANDImage.s5l8900(at: base), base: base, overlay: nil)
         let ctxVB = 3
         let start = ctxVB * sb
         try put(
@@ -93,14 +91,43 @@ import Testing
         }
         // logical block 0 copied to virtual block 30 with page 10 changed; the log page for lbn 1 offset 5
         for off in 0..<sb {
-            guard let (d, s) = N45FTL.page(base, nil, N45NAND.location(lpn: off, banks: banks)) else { continue }
+            guard let (d, s) = read(N45NAND.location(lpn: off, banks: banks)) else { continue }
             try put(ovl, vpn: 30 * sb + off, off == 10 && changeData ? [UInt8](repeating: 0xA1, count: pp) : d, s)
         }
         let log =
             changeData
             ? [UInt8](repeating: 0xB2, count: pp)
-            : N45FTL.page(base, nil, N45NAND.location(lpn: sb + 5, banks: banks))!.data
+            : read(N45NAND.location(lpn: sb + 5, banks: banks))!.data
         try put(ovl, vpn: 31 * sb + 2, log, N45NAND.dataSpare(sb + 5))
+    }
+
+    /// The same device in format 1: the base image as bank<N> page files, and the live clone's records that differ
+    /// from the base as page files in the overlay (the live clone removed). booted() erases no block, so no markers.
+    static func asFormat1(_ nand: URL, overlay: URL) throws {
+        let fm = FileManager.default
+        let image = try PageNANDImage.s5l8900(at: nand)
+        let base = try PageNANDImage.Store(nand)
+        let liveURL = PreparedDeviceBoot.liveNAND(overlay: overlay)
+        let live = fm.fileExists(atPath: liveURL.path) ? try PageNANDImage.Store(liveURL) : nil
+        let pages = nand.deletingLastPathComponent().appendingPathComponent("nand-pages")
+        func put(_ record: [UInt8], _ root: URL, _ chip: Int, _ page: Int) throws {
+            let dir = root.appendingPathComponent("bank\(chip)")
+            try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+            try Data(record).write(to: dir.appendingPathComponent("\(page).page"))
+        }
+        for chip in 0..<image.chips {
+            try fm.createDirectory(at: pages.appendingPathComponent("bank\(chip)"), withIntermediateDirectories: true)
+            var blocks = base.dataBlocks(chip)
+            if let live { blocks.formUnion(live.dataBlocks(chip)) }
+            for page in blocks.flatMap({ $0 * N45NAND.pagesPerBlock..<($0 + 1) * N45NAND.pagesPerBlock }) {
+                let b = try base.read(chip, page)
+                if b != image.blankRecord { try put(b, pages, chip, page) }
+                if let l = try live?.read(chip, page), l != b { try put(l, overlay, chip, page) }
+            }
+        }
+        try fm.removeItem(at: nand)
+        try fm.moveItem(at: pages, to: nand)
+        if live != nil { try fm.removeItem(at: liveURL) }
     }
 
     /// A fresh store reads back as its volume, through the prepared context.

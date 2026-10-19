@@ -7,16 +7,34 @@ import Testing
 /// been verified on (qemu-ios contrib/it-media/README.md and its booted round trips). Fails when an unverified
 /// firmware is offered an import, a verified one is refused, or the refusal loses its plain words.
 struct MediaSupportTests {
-    /// Every catalog entry's verified destinations; anything not listed takes none. Booted round trips
-    /// (the former live media check): 7D11, 7E18 and 7B367; 7C145, 7B405 and 7B500 share their 3.x services.
-    /// Music on the iPad's 5.1.1 (9B206) through ML3's importer; other 5.x builds have not been round-tripped.
-    /// 4.2.1 (both boards) fails (it-media README), so 4.x stays refused.
-    static let verified: [String: Set<String>] = [
-        "n72ap-7E18": ["Music", "Videos", "Photos"],
-        "n72ap-7C145": ["Music", "Photos"], "n72ap-7D11": ["Music", "Photos"],
-        "k48ap-7B367": ["Music", "Photos"], "k48ap-7B405": ["Music", "Photos"], "k48ap-7B500": ["Music", "Photos"],
-        "k48ap-9B206": ["Music"],
-    ]
+    /// Every catalog entry's verified destinations; anything not listed takes none. Booted round trips (`sessions
+    /// single --media`: a song, a movie and a photo imported and read back from the libraries' databases, with Music
+    /// open; on 3.1.3, 4.2.1, 5.1.1, 6.1.6 and 7.1.2 also after a reboot) on n72ap 7E18 and 8C148, k48ap 7B500, 8C148
+    /// and 9B206, n88ap 8A293 to 8C148a, 9A334 to 9B206 and 10A403 to 10B500, n18ap 8C148, 9A334 and 9B206, n81ap
+    /// 9A334 and 10A523 to 10B500, n90ap 8C148, 9B206, 10B329, 11A465 and 11D257; a build's other boards and the
+    /// releases between those take the same helpers. On the 3GS and the iPod touch 3G 3.1.x takes photos but not
+    /// music (the insert waits on a lock), and 4.3 to 4.3.5 take none (their importer can't write the library);
+    /// qemu-ios contrib/it-media/README.md.
+    static let all: Set<String> = ["Music", "Videos", "Photos"]
+    static let verified: [String: Set<String>] = Dictionary(
+        uniqueKeysWithValues: [
+            "k48ap-7B367", "k48ap-7B405", "k48ap-7B500", "n72ap-7C145", "n72ap-7D11", "n72ap-7E18",
+            "k48ap-8C148", "n72ap-8A293", "n72ap-8A400", "n72ap-8B117", "n72ap-8C148", "n18ap-8A293", "n18ap-8A400",
+            "n18ap-8B117", "n18ap-8C148", "n81ap-8B117", "n81ap-8B118", "n81ap-8C148", "n88ap-8A293", "n88ap-8A306",
+            "n88ap-8A400", "n88ap-8B117", "n88ap-8C148", "n88ap-8C148a", "n90ap-8A293", "n90ap-8A306", "n90ap-8A400",
+            "n90ap-8B117", "n90ap-8C148",
+            "k48ap-9A334", "k48ap-9A405", "k48ap-9B176", "k48ap-9B206", "n18ap-9A334", "n18ap-9A405", "n18ap-9B176",
+            "n18ap-9B206", "n81ap-9A334", "n81ap-9A405", "n81ap-9B176", "n81ap-9B206", "n88ap-9A334", "n88ap-9A405",
+            "n88ap-9B176", "n88ap-9B206", "n90ap-9A334", "n90ap-9A405", "n90ap-9B176", "n90ap-9B206", "n90ap-9B208",
+            "n81ap-10A403", "n81ap-10A523", "n81ap-10B144", "n81ap-10B146", "n81ap-10B329", "n81ap-10B400",
+            "n81ap-10B500", "n88ap-10A403", "n88ap-10A523", "n88ap-10B141", "n88ap-10B146", "n88ap-10B329",
+            "n88ap-10B500", "n90ap-10A403", "n90ap-10A523", "n90ap-10B144", "n90ap-10B146", "n90ap-10B329",
+            "n90ap-11A465", "n90ap-11A501", "n90ap-11B511", "n90ap-11B554a", "n90ap-11B651", "n90ap-11D169",
+            "n90ap-11D201", "n90ap-11D257",
+        ].map { ($0, all) }
+            + ["n88ap-7C144", "n88ap-7D11", "n88ap-7E18", "n18ap-7C145", "n18ap-7C146", "n18ap-7D11", "n18ap-7E18"]
+            .map { ($0, ["Photos"]) }
+    )
     static let nouns = ["Music": "music", "Videos": "videos", "Photos": "photos"]
 
     struct Entry: Decodable {

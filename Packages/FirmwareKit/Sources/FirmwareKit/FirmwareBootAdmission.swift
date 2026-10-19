@@ -75,6 +75,10 @@ public nonisolated enum FirmwareBootAdmission {
             )
             return imaged || identity
         }
+        if HostRuntime.Board(rawValue: record["board"] as? String ?? "")?.soc == .s5l8900 {
+            // after the 1.x SystemConfiguration step (admit), whose stopped edit wrote the format 1 overlay
+            return try K48NANDMigration.admit(owner, notice: notice)
+        }
         guard record["board"] as? String == "n72ap" else { return false }
         // the recipe 1 -> 2 GPT pages go into the format 1 overlay, which the image migration then carries
         let gpt = try N72NAND.migrateLegacyGPT(

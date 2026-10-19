@@ -38,6 +38,25 @@ public nonisolated enum FirmwareTool {
         return try JSONDecoder().decode(Report.self, from: data).changed
     }
 
+    /// iPhone OS 1.x: `changes` into the stopped device's preferences (`firmwarekit edit --action preferences`, a
+    /// stopped edit through the 1.x FTL). False when the device holds them already.
+    public static func writePreferences(device: URL, changes: [GuestDefault], executable: URL) async throws -> Bool {
+        let plist = changes.map { d -> [String: Any] in
+            var entry: [String: Any] = ["domain": d.domain, "key": d.key]
+            entry["value"] = d.value?.object
+            return entry
+        }
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("prefs-\(UUID().uuidString).plist")
+        try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let data = try await run(
+            FirmwareCommand.Edit(device: device, action: .preferences, recordPolicy: .managed, prefs: file),
+            executable: executable
+        )
+        struct Report: Decodable { let changed: Bool }
+        return try JSONDecoder().decode(Report.self, from: data).changed
+    }
+
     public static func run(_ command: some FirmwareCommandLine, executable: URL) async throws -> Data {
         let child = try await Subprocess.run(
             .path(FilePath(executable.path)),

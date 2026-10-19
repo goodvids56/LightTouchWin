@@ -89,8 +89,11 @@ public enum SessionJudge {
         let unanswered = homes.filter { hasAgent && ($0.string("frontmost") ?? "").isEmpty }.map {
             $0.int("generation") ?? 1
         }
+        // The references are English Home screens: a base prepared in another language (create --language) has its
+        // own labels, so only the agent judges it.
+        let language = derived.string("language").map { String($0.prefix { $0 != "," }) } ?? "en"
         var frames: [String: FrameCheck.Verdict] = [:]
-        for name in names {
+        for name in names where language == "en" {
             let ref = references.appendingPathComponent("\(entryID)-\(name).png")
             if FileManager.default.fileExists(atPath: ref.path), let path = shots[name]?.string("path") {
                 frames[name] = FrameCheck.verdict(capture: URL(fileURLWithPath: path), reference: ref)
@@ -132,6 +135,7 @@ public enum SessionJudge {
         if !unanswered.isEmpty { parts.append("agent unanswered on boot \(unanswered)") }
         if !unknown.isEmpty { parts.append("unjudged \(unknown) (no agent, no reference)") }
         for (name, v) in frames.sorted(by: { $0.key < $1.key }) { parts.append("frame \(name): \(v.why)") }
+        if language != "en" { parts.append("frame not compared (references are English, the base is \(language))") }
         return (ok, parts.joined(separator: "; "))
     }
 

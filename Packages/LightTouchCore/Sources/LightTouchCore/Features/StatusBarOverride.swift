@@ -10,11 +10,12 @@
 // gets none. 5.0 (9A334), 6.0 (10A403) and 7.0 (beta 11A4372q) encode the struct as the next minor does, up to the
 // bitfields at its end, with the same item tables; 4.1 (8B117) has no postStatusBarOverrideData.
 //
-// 2.0 to 4.1: SpringBoard's own demo keys, read in -loadDebuggingAndDemoPrefs (3.1.3 0x848a, 4.0 0x9d68; the keys
+// 1.0 to 4.1: SpringBoard's own demo keys, read in -loadDebuggingAndDemoPrefs (3.1.3 0x848a, 4.0 0x9d68; the keys
 // in every SpringBoard from 2.2.1 to 4.1, 3.2.2 too): SBFakeTime with SBFakeTimeString is the clock's text
 // (SBStatusBarTimeView tile, 4.0 and 4.1 SBStatusBarDataManager _updateTimeString); SBFakeCarrier the operator name;
 // SBFakeBars, an integer, full bars where it is nonzero (5 cellular, 3 Wi-Fi with Wi-Fi as the data network where it
-// is 1) and a full battery (displayBatteryCapacityAsPercentage answers 100).
+// is 1) and a full battery (displayBatteryCapacityAsPercentage answers 100). 1.0 and 1.1.4's SpringBoards name the same
+// keys, but for 1.0's SBFakeCarrier.
 
 import Foundation
 
@@ -48,14 +49,15 @@ public nonisolated struct StatusBarStyle: Codable, Equatable, Sendable {
         hidesIndicators = try c.decodeIfPresent(Bool.self, forKey: .hidesIndicators) ?? d.hidesIndicators
     }
 
-    /// Whether `version` takes it as SpringBoard's demo keys (2.0 to 4.1): the clock's text and the carrier, with
+    /// Whether `version` takes it as SpringBoard's demo keys (1.0 to 4.1): the clock's text and the carrier, with
     /// full bars and battery.
-    public static func takesKeys(version: String) -> Bool {
-        !TweakSettings.before(version, "2.0") && TweakSettings.before(version, "4.2")
-    }
+    public static func takesKeys(version: String) -> Bool { TweakSettings.before(version, "4.2") }
 
-    /// The keys that set it on a 2.0 to 4.1 SpringBoard.
-    func keys() -> [GuestDefault] {
+    /// Whether its SpringBoard reads SBFakeCarrier: 1.0's has the other demo keys and not that one (1.1.4's has it).
+    public static func takesCarrier(version: String) -> Bool { !TweakSettings.before(version, "1.1") }
+
+    /// The keys that set it on a 1.0 to 4.1 SpringBoard.
+    func keys(version: String) -> [GuestDefault] {
         var keys = [GuestDefault("com.apple.springboard", "SBFakeBars", .int(1))]
         if !time.isEmpty {
             keys += [
@@ -63,7 +65,9 @@ public nonisolated struct StatusBarStyle: Codable, Equatable, Sendable {
                 GuestDefault("com.apple.springboard", "SBFakeTimeString", .string(time)),
             ]
         }
-        if !carrier.isEmpty { keys.append(GuestDefault("com.apple.springboard", "SBFakeCarrier", .string(carrier))) }
+        if !carrier.isEmpty, Self.takesCarrier(version: version) {
+            keys.append(GuestDefault("com.apple.springboard", "SBFakeCarrier", .string(carrier)))
+        }
         return keys
     }
 }

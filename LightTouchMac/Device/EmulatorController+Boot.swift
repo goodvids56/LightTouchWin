@@ -79,6 +79,12 @@ extension EmulatorController {
                     }
                     try Task.checkCancellation()
                 }
+                // 1.x has no agent to write the tweaks' keys either: the stopped device takes them.
+                let device = self.instance.paths.directory
+                await self.tweaks.writeStopped {
+                    try await FirmwareTool.writePreferences(device: device, changes: $0, executable: executable)
+                }
+                try Task.checkCancellation()
                 let admitted = try await FirmwareTool.admitBoot(
                     device: self.instance.paths.directory,
                     managed: true,

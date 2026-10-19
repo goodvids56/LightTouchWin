@@ -61,5 +61,16 @@ struct HomeVerdictTests {
         #expect(verdict(events(frontmost: "", screen: "", path: wrong), lock: [:], entry: "m68ap-1A543a") == false)
     }
 
+    /// 2.2.1 has a Ukrainian UI: a base prepared with --language uk-UA has Ukrainian labels, not the reference's.
+    @Test func anotherLanguageIsJudgedByTheAgentOnly() throws {
+        let other = try shot("m68ap-1A543a-home.png")  // a frame unlike the reference
+        defer { try? FileManager.default.removeItem(atPath: (other as NSString).deletingLastPathComponent) }
+        var lock = Self.agentLock
+        lock["derived"] = ["language": "uk, region uk_UA, keyboards [\"uk_UK\"]"]
+        #expect(verdict(events(path: other), lock: lock, entry: "n72ap-5H11a") == true)
+        lock["derived"] = ["language": "en, region en_US, keyboards [\"en_US\"]"]
+        #expect(verdict(events(path: other), lock: lock, entry: "n72ap-5H11a") == false)
+    }
+
     @Test func noShotIsNoVerdict() { #expect(verdict(Events([])) == nil) }
 }

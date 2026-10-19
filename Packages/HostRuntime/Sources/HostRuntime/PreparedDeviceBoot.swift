@@ -55,6 +55,10 @@ public struct PreparedDeviceBoot {
             )
         }
         if let storageKey, try !pinOverlay(overlay, toBase: storageKey) { throw Failure.baseMismatch }
+        var boot = files.boot
+        if board.soc == .s5l8920, required.boot == "kboot.bin" {
+            boot = try audioClockBoot(kboot: files.boot, overlay: overlay)
+        }
         var nand = files.nand
         var nandOverlay: URL? = overlay
         if isImageStore(files.nand) {
@@ -67,7 +71,7 @@ public struct PreparedDeviceBoot {
         let unitDieID = dieID ?? (identity?["die-id"] as? [String])?.joined(separator: ":")
         return Self(
             board: board,
-            boot: files.boot,
+            boot: boot,
             nand: nand,
             nandOverlay: nandOverlay,
             baseNOR: base.appendingPathComponent("nor.bin"),
@@ -83,6 +87,44 @@ public struct PreparedDeviceBoot {
                     .merging(clock.map { ["rtc-epoch": String(Int64($0.timeIntervalSince1970))] } ?? [:]) { $1 }
             ) { $1 }
         )
+    }
+
+    /// /arm-io/audio-complex ncoref-frequency (S5L8920/8922 only): iBoot fills it with PLL1's frequency, which LLB sets
+    /// to 24 MHz x 81 / 6 / 2 = 162 MHz (7E18 n88ap and 8C148 n18ap LLB). The kernel's audio complex divides by its
+    /// NCO's registers with it to find each I2S port's MCLK; left 0, every port reads 0 Hz (FirmwareKit KBoot).
+    public static let ncorefHz: UInt32 = 162_000_000
+
+    /// The kboot.bin a 3GS or iPod touch 3G boots. One prepared before KBoot filled ncoref-frequency (2026-10-09)
+    /// has the IPSW's 0, so iPhone OS 3's mediaserverd finds no audio device and every sound fails: the first boot
+    /// writes a copy with the value set into the overlay, read back before it's used, and later boots use that copy.
+    /// The base stays as it was; Erase empties the overlay and the next boot writes the copy again.
+    static func audioClockBoot(kboot: URL, overlay: URL) throws -> URL {
+        let repaired = overlay.appendingPathComponent("kboot.bin")
+        if FileManager.default.fileExists(atPath: repaired.path) { return repaired }
+        var image = try Data(contentsOf: kboot)
+        guard let at = ncorefOffset(image), image[at..<at + 4].allSatisfy({ $0 == 0 }) else { return kboot }
+        withUnsafeBytes(of: ncorefHz.littleEndian) { image.replaceSubrange(at..<at + 4, with: $0) }
+        let staged = overlay.appendingPathComponent(".kboot-\(UUID().uuidString).tmp")
+        defer { try? FileManager.default.removeItem(at: staged) }
+        try image.write(to: staged)
+        guard let written = try? Data(contentsOf: staged), written == image else {
+            throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: staged.path])
+        }
+        try FileManager.default.moveItem(at: staged, to: repaired)
+        FileHandle.standardError.write(
+            Data("boot: kboot.bin's ncoref-frequency was 0; booting \(repaired.path)\n".utf8)
+        )
+        return repaired
+    }
+
+    /// Where the device tree property's 4-byte value is (a 32-byte name, a length of 4, the value), when it occurs
+    /// exactly once.
+    static func ncorefOffset(_ image: Data) -> Int? {
+        let key = Data("ncoref-frequency".utf8) + Data(count: 16) + Data([4, 0, 0, 0])
+        guard let first = image.range(of: key), image.range(of: key, in: first.upperBound..<image.endIndex) == nil,
+            first.upperBound + 4 <= image.endIndex
+        else { return nil }
+        return first.upperBound
     }
 
     /// Explicit adapter for pre-library N72 regression fixtures with separate images.
@@ -150,9 +192,9 @@ public struct PreparedDeviceBoot {
     }
 
     /// An image store (record format 2: geometry.json storage_format nand-xor-ff-v2, FirmwareKit's A4 and S5L8920 stores,
-    /// K48NAND.StoreFormat.image; nand-xor-blank-v2, the iPod touch 2G's, N72NANDImage) needs no page overlay: the
-    /// device's NAND is an APFS clone of the base's, `overlay/nand`, which the emulator writes in place. Erase removes
-    /// the overlay and the next boot clones again.
+    /// K48NAND.StoreFormat.image; nand-xor-blank-v2, the iPod touch 2G's and the 1.x boards', PageNANDImage) needs no
+    /// page overlay: the device's NAND is an APFS clone of the base's, `overlay/nand`, which the emulator writes in
+    /// place. Erase removes the overlay and the next boot clones again.
     public static func isImageStore(_ nand: URL) -> Bool {
         let geometry = (try? Data(contentsOf: nand.appendingPathComponent("geometry.json")))
             .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
@@ -184,11 +226,11 @@ public struct PreparedDeviceBoot {
 
     /// The device's live NAND, cloned from `base` (its read-only image store) on the first boot after preparation or
     /// Erase. The clone keeps the base's uchg and modes, so they are cleared before it is published by a rename.
-    static func liveNAND(base: URL, overlay: URL) throws -> URL {
+    public static func liveNAND(base: URL, overlay: URL) throws -> URL {
         let fm = FileManager.default
         let live = liveNAND(overlay: overlay)
         // Page files an older build wrote over this base: never booted as an image, and never silently dropped.
-        for name in ["bus0-ce0.pages", "bus0-ce0.dirty", "cs0"]
+        for name in ["bus0-ce0.pages", "bus0-ce0.dirty", "cs0", "bank0"]
         where fm.fileExists(atPath: overlay.appendingPathComponent(name).path) {
             throw CocoaError(
                 .fileReadCorruptFile,
@@ -287,7 +329,7 @@ public struct PreparedDeviceBoot {
                     iBoot: boot.path,
                     nand: nand.path,
                     writableNOR: try writableNORPath(),
-                    overlay: overlay.path,
+                    overlay: nandOverlay?.path ?? "",
                     usbAddress: usbAddress,
                     wifi: wifi,
                     guestPackage: guestPackage,

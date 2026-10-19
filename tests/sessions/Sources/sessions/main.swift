@@ -82,6 +82,16 @@ struct SingleCheck: ParsableCommand {
             """
     )
     var accessibility = false
+    @Option(
+        help: """
+            Import Media at Home (repeatable: a song, a video, a photo): staged and committed as the app does, then \
+            found in the music library or Saved Photos, read back from their databases; with --reboot also on boot 2.
+            """,
+        transform: path
+    )
+    var media: [URL] = []
+    @Option(help: "Where itmedia and itphoto are (default: the pinned qemu-ios's contrib/it-media).", transform: path)
+    var mediaTools: URL?
     @Flag(help: "The base was prepared with --skip-setup: no Setup page, Setup's answers from the Mac.")
     var skipSetup = false
     @Option(help: "The base was prepared with create --language TAG: the guest's language and region are TAG's.")

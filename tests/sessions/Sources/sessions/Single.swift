@@ -34,6 +34,11 @@ func single(_ args: SingleCheck) -> Never {
         single["developerImage"] = image.path
     }
     if args.accessibility { single["accessibility"] = true }
+    if !args.media.isEmpty {
+        single["media"] = args.media.map(\.path)
+        single["mediaTools"] =
+            (args.mediaTools ?? checkout("qemu-ios").appendingPathComponent("contrib/it-media")).path
+    }
     if args.skipSetup { single["skipSetup"] = true }
     if args.jailbreak { single["jailbreak"] = true }
     if let panel = args.panel { single["panel"] = panel }
@@ -430,6 +435,7 @@ func single(_ args: SingleCheck) -> Never {
             "\(d): both off again (on: '\(ax.string("after") ?? "?")', \(format(restored, 2)) of the frame as before)"
         )
     }
+    if !args.media.isEmpty { judgeMedia(r, d, events: events, reboot: args.reboot, major: base.major) }
     if let file = args.readFile {
         let reads = events.find("fileRead", ["device": d])
         r.check(!reads.isEmpty && reads.allSatisfy { $0.bool("found") }, "\(d): the guest agent reads back \(file)")
@@ -482,6 +488,60 @@ func resized(_ r: Report, _ d: String, panel: String, events: Events) {
     for e in events.find("screenshot") {
         print("   \(e.string("path") ?? "")  (\(e.int("width") ?? 0)x\(e.int("height") ?? 0))")
     }
+}
+
+/// `single --media`: every file imported; each song or video in the music library under its title, each photo a new
+/// original in DCIM and (4.x on) a new asset in Photos' database; and on a reboot all of it still there.
+func judgeMedia(_ r: Report, _ d: String, events: Events, reboot: Bool, major: Int) {
+    let imports = events.find("mediaImport", ["device": d])
+    for e in imports {
+        r.check(
+            e.bool("ok"),
+            "\(d): \(e.string("destination") ?? "?") imports “\(e.string("title") ?? e.string("file") ?? "?")” in "
+                + "\(format(e.double("seconds"), 0)) s" + (e.string("error").map { ": \($0)" } ?? "")
+        )
+    }
+    let counts = events.find("mediaCount", ["device": d])
+    guard let before = counts.first(where: { $0.string("stage") == "before" }) else {
+        r.check(false, "\(d): the libraries were read before the import")
+        return
+    }
+    let afters = counts.filter { $0.string("stage") != "before" }
+    let photos = imports.filter { $0.string("destination") == "Photos" }.count
+    let library = imports.filter { $0.string("destination") != "Photos" }.count
+    func summary(_ e: Event) -> String {
+        "\(e.string("library") ?? "?") items \(e.int("items") ?? -1), found \(e["found"] as? [String: Any] ?? [:]), "
+            + "originals \(e.int("originals") ?? -1), assets \(e.int("assets").map(String.init) ?? "-")"
+    }
+    print("   media before: \(summary(before))")
+    for e in afters {
+        let found = (e["found"] as? [String: Any] ?? [:]).mapValues { ($0 as? NSNumber)?.intValue ?? 0 }
+        let boot = e.int("generation") ?? 1
+        let label =
+            (boot == 1 ? "" : "after reboot \(boot - 1), ")
+            + (e.string("stage") == "music" ? "Music opened" : "after the import")
+        if library > 0 {
+            r.check(
+                found.count == library && found.values.allSatisfy { $0 >= 1 }
+                    && (e.int("items") ?? 0) >= (before.int("items") ?? 0) + library,
+                "\(d): \(label): the music library holds the imports (\(summary(e)))"
+            )
+        }
+        if photos > 0 {
+            let assets = major < 4 || before.int("assets").map { (e.int("assets") ?? 0) >= $0 + photos } ?? true
+            r.check(
+                (e.int("originals") ?? 0) >= (before.int("originals") ?? 0) + photos && assets,
+                "\(d): \(label): Saved Photos holds the imports (\(summary(e)))"
+            )
+        }
+    }
+    let opened = events.find("musicOpened", ["device": d]).map { $0.string("front") ?? "" }
+    let music = ["com.apple.mobileipod", "com.apple.Music"]
+    r.check(
+        afters.count == (reboot ? 3 : 2) && opened.count == (library == 0 ? 0 : reboot ? 2 : 1)
+            && opened.allSatisfy { front in music.contains { front.hasPrefix($0) } },
+        "\(d): the libraries were read after the import and with Music open on each boot (frontmost \(opened))"
+    )
 }
 
 func hex(_ value: Int) -> String { "0x" + String(value, radix: 16) }

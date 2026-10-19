@@ -11,7 +11,7 @@
 // reading as blank.
 // One volume, "system" (the generated image keeps /private/var on it).
 //
-// legacy (n45/m68, base = bank<N>/<page>.page): iPhone OS 1.x's FTL as the guest left it (N45FTL: its context's
+// legacy (n45/m68, base = an image store, PageNANDImage.s5l8900, or bank<N>/<page>.page): iPhone OS 1.x's FTL as the guest left it (N45FTL: its context's
 // map and log blocks over base + overlay). One volume, "system". A device not shut down cleanly is refused.
 //
 // iPad (k48 and the other kboot boards, base = geometry.json + bus<b>-ce<c>.pages; the S5L8920 boards' meta unwhitened,
@@ -35,7 +35,7 @@ public enum VolumeRebuild {
 
     public static func board(of base: URL) throws -> Board {
         let fm = FileManager.default
-        if N72NANDImage.isImage(base) { return .ipod }
+        if let image = PageNANDImage.of(base) { return image == .n72 ? .ipod : .legacy }
         if fm.fileExists(atPath: base.appendingPathComponent("geometry.json").path) { return .ipad }
         if fm.fileExists(atPath: base.appendingPathComponent("cs0").path) { return .ipod }
         if fm.fileExists(atPath: base.appendingPathComponent("bank0").path) { return .legacy }

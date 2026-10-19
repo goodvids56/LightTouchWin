@@ -27,6 +27,17 @@ import Foundation
             try emit(["trusted": true, "changed": changed])
             return 0
         }
+        if command.action == .preferences {  // begin, mount, the 1.x plists, commit; nothing when already there
+            guard let prefs = command.prefs,
+                let changes = try PropertyListSerialization.propertyList(
+                    from: Data(contentsOf: URL(fileURLWithPath: prefs)),
+                    format: nil
+                ) as? [[String: Any]]
+            else { throw FirmwareError(.internal, "preferences requires --prefs, a plist array") }
+            let changed = try await Preferences1x.write(device: device, changes: changes, policy: policy, log: log)
+            try emit(["changed": changed])
+            return 0
+        }
         if command.action == .jailbreak {  // Cydia's bootstrap beside the decrypt cache, as create keeps it
             guard let cache = command.cache else { throw FirmwareError(.internal, "jailbreak requires --cache DIR") }
             try await StoppedVolumeEdit.jailbreak(
@@ -63,7 +74,7 @@ import Foundation
         case .recover:
             try await StoppedVolumeEdit.recover(device: device, id: session, policy: policy)
             try emit(["recovered": session.uuidString])
-        case .begin, .trustAnchor, .jailbreak: break
+        case .begin, .trustAnchor, .jailbreak, .preferences: break
         }
         return 0
     } catch {

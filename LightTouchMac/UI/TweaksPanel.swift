@@ -34,7 +34,10 @@ struct TweaksPanel: View {
                 }
             }
             Section("Hidden Apps") {
-                if !model.isRunning {
+                if !model.opensHiddenApps {
+                    Text("They open through the guest tools, which this version doesn’t run.")
+                        .foregroundStyle(.secondary)
+                } else if !model.isRunning {
                     Text("Start the device to open the apps its Home screen hides.").foregroundStyle(.secondary)
                 } else if let apps = model.hiddenApps {
                     if apps.isEmpty {
@@ -64,6 +67,7 @@ struct TweaksPanel: View {
         TweakToggle(
             title: tweak.title,
             caption: model.caption(tweak),
+            note: model.note(tweak),
             isOn: Binding(
                 get: { model.isOn(tweak) && available },
                 set: { model.set(tweak, on: $0) }
@@ -110,9 +114,14 @@ private struct StatusBarOptions: View {
         let style = model.settings.statusBar
         let each = model.statusBarSetsEach
         CommitField(title: "Time", prompt: "Real time", value: style.time) { v in model.setStatusBar { $0.time = v } }
-        CommitField(title: "Carrier", prompt: "Network’s own", value: style.carrier) { v in
+        CommitField(
+            title: "Carrier",
+            prompt: model.statusBarSetsCarrier ? "Network’s own" : "Not on this version",
+            value: style.carrier
+        ) { v in
             model.setStatusBar { $0.carrier = v }
         }
+        .disabled(!model.statusBarSetsCarrier)
         Group {
             Stepper(
                 model.hasCellular ? "Cellular Bars: \(style.cellBars)" : "Cellular Bars: no cellular radio",
@@ -168,16 +177,18 @@ private struct CommitField: View {
     }
 }
 
-/// A switch with its caption under it.
+/// A switch with its caption under it, and its note (why it's off, or when it takes effect) under that.
 struct TweakToggle: View {
     let title: String
     let caption: String
+    var note: String? = nil
     @Binding var isOn: Bool
 
     var body: some View {
         Toggle(isOn: $isOn) {
             Text(title)
             Text(caption)
+            if let note { Text(note) }
         }
     }
 }

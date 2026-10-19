@@ -52,6 +52,12 @@ import Observation
         return tweak.isAvailable(version: version, guestTools: guestTools, clockPinned: clockPinned)
     }
 
+    /// The row's note: why it's off, or that it takes effect at the next start (Tweak.note).
+    public func note(_ tweak: Tweak) -> String? {
+        if let why = tweak.note(version: version, guestTools: guestTools, clockPinned: clockPinned) { return why }
+        return tweak == .developerSettings && developerImage == nil ? "No Developer Disk Image for this version." : nil
+    }
+
     /// The next start's clock (Time Machine), as PreparedDeviceBoot takes it.
     public var bootClock: Date? { settings.clock(clockPinned: clockPinned) }
 
@@ -95,6 +101,29 @@ import Observation
     }
     /// This boot's mount failure, for the panel (an apply after it doesn't clear it).
     public private(set) var mountFailure: String?
+
+    /// The last write into the stopped device (writeStopped) failed: for the panel, until the next start's write.
+    public private(set) var stoppedFailure: String?
+
+    /// iPhone OS 1.x, before each start: the keys its settings ask for (and the removal of those it wrote and no longer
+    /// wants) go into the stopped device through `write` (FirmwareTool.writePreferences), which SpringBoard and
+    /// MobileSafari read as they start. Nothing to do while none is on and none was written; a failure leaves the
+    /// device starting as it is.
+    public func writeStopped(_ write: ([GuestDefault]) async throws -> Bool) async {
+        guard !guestTools, Tweak.writtenWhileStopped(version: version) else { return }
+        let settings = settings
+        let changes = settings.changes(version: version)
+        guard !changes.isEmpty else { return }
+        do {
+            if try await write(changes) { logEvent("tweaks: \(changes.map(\.id)) written into the stopped device") }
+            let written = settings.defaults(version: version).map(\.id)
+            if written != settings.written { change { $0.written = written } }
+            stoppedFailure = nil
+        } catch {
+            stoppedFailure = "The tweaks weren’t written: \(error.localizedDescription)"
+            logEvent("tweaks: \(error)")
+        }
+    }
 
     /// Brings the running guest to the saved settings when they changed since this boot's last apply (or at its
     /// first). `isCurrent` says the boot is still this one.

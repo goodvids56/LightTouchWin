@@ -26,11 +26,14 @@ import Observation
     }
 
     public var isRunning: Bool { guest != nil }
+    /// The hidden apps open through the guest agent, which iPhone OS 1.x doesn't run.
+    public var opensHiddenApps: Bool { tweaks.guestTools }
     public var settings: TweakSettings { tweaks.settings }
 
     public func isOn(_ tweak: Tweak) -> Bool { settings.isOn(tweak) }
     public func isAvailable(_ tweak: Tweak) -> Bool { tweaks.isAvailable(tweak) }
     public func caption(_ tweak: Tweak) -> String { tweak.caption(version: tweaks.version) }
+    public func note(_ tweak: Tweak) -> String? { tweaks.note(tweak) }
 
     public func set(_ tweak: Tweak, on: Bool) {
         guard isAvailable(tweak) || !on else { return }
@@ -43,6 +46,8 @@ import Observation
     public func set(clock: Date) { tweaks.change { $0.clock = clock } }
     public func setStatusBar(_ change: (inout StatusBarStyle) -> Void) { tweaks.change { change(&$0.statusBar) } }
 
+    /// Marketing Status Bar sets the carrier: every SpringBoard but 1.0's.
+    public var statusBarSetsCarrier: Bool { StatusBarStyle.takesCarrier(version: tweaks.version) }
     /// Marketing Status Bar sets the bars, battery and indicators one by one: UIKit's overrides (4.2 on). 2.0 to 4.1
     /// SpringBoard draws them full or real (SBFakeBars).
     public var statusBarSetsEach: Bool { !StatusBarStyle.takesKeys(version: tweaks.version) }
@@ -51,7 +56,7 @@ import Observation
     /// What the panel says under the switches: why the session couldn't apply something.
     public var status: String? {
         if let message { return message }
-        if let failure = tweaks.failure ?? tweaks.mountFailure { return failure }
+        if let failure = tweaks.failure ?? tweaks.mountFailure ?? tweaks.stoppedFailure { return failure }
         let old = tweaks.needsNewerGuestTools.map(\.title)
         guard !old.isEmpty else { return nil }
         return "\(old.joined(separator: " and ")) needs newer guest tools. Restart the device to update them "
@@ -65,14 +70,14 @@ import Observation
     public private(set) var hiddenApps: [HiddenApp]?
 
     public func listHiddenApps() async {
-        guard let guest, hiddenApps == nil else { return }
+        guard let guest, opensHiddenApps, hiddenApps == nil else { return }
         do { hiddenApps = try await HiddenApp.present(on: guest) } catch {
             message = "Couldn’t list the hidden apps: \(error.localizedDescription)"
         }
     }
 
     public func open(_ app: HiddenApp) async {
-        guard let guest else { return }
+        guard let guest, opensHiddenApps else { return }
         do {
             try await guest.launch(app.bundleID)
             message = nil

@@ -7,7 +7,7 @@
   "build": "7B367",
   "released": "2010-04-03",
   "status": "available",
-  "media": ["Music", "Photos"],
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPad/061-7987.20100403.mjiTr/iPad1,1_3.2_7B367_Restore.ipsw", "sha1": "172e8297af74b91971a802e6ad137c891f553099", "bytes": 478959325, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_3.2_7B367_Restore.ipsw", "sha1": "172e8297af74b91971a802e6ad137c891f553099", "bytes": 478959325}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "e839ae241b3c2010a13c2031973f7310", "key": "f6a6c39e8ea1c2bf9d2bd4eef2e7ef4d0d0611d86a6d8511c625b58042e8e31e"},
@@ -42,7 +42,7 @@
   "build": "7B405",
   "released": "2010-07-15",
   "status": "experimental",
-  "media": ["Music", "Photos"],
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPad/061-8282.20100713.vgtgh/iPad1,1_3.2.1_7B405_Restore.ipsw", "sha1": "de0a2b64cd335d48fb4abc9ed8700f5dbdf768ca", "bytes": 479012625, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_3.2.1_7B405_Restore.ipsw", "sha1": "de0a2b64cd335d48fb4abc9ed8700f5dbdf768ca", "bytes": 479012625}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "743a4d54b0da0b23662885bd6a8a9ce1", "key": "aae7b027f6d797b0a95459a13b1c0d9749f2279a5de4356239ddf34ede15fd39"},
@@ -77,7 +77,7 @@
   "build": "7B500",
   "released": "2010-08-11",
   "status": "available",
-  "media": ["Music", "Photos"],
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPad/061-8801.20100811.CvfR5/iPad1,1_3.2.2_7B500_Restore.ipsw", "sha1": "68b613f78581d36eab96aa5a007001dff142baa3", "bytes": 479001595, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_3.2.2_7B500_Restore.ipsw", "sha1": "68b613f78581d36eab96aa5a007001dff142baa3", "bytes": 479001595}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "743a4d54b0da0b23662885bd6a8a9ce1", "key": "aae7b027f6d797b0a95459a13b1c0d9749f2279a5de4356239ddf34ede15fd39"},
@@ -292,6 +292,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "available",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPad/061-9857.20101122.VGthy/iPad1,1_4.2.1_8C148_Restore.ipsw", "sha1": "8717b3bedc925b587566442ad375aa65d857e79a", "bytes": 578084840, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_4.2.1_8C148_Restore.ipsw", "sha1": "8717b3bedc925b587566442ad375aa65d857e79a", "bytes": 578084840}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "d108bbfc6e3e4d6d3c9fec1d19fe1769", "key": "3359842bed66e5f2b942f60ac30667a36a86f049b8cb33bd101c1caf5cb422e8"},
@@ -691,6 +692,7 @@
   "build": "9A334",
   "released": "2011-10-12",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-8357.20111012.DTOrM/iPad1,1_5.0_9A334_Restore.ipsw", "sha1": "c7f6d2d94b1f9f67103343e001f85be7111f6df0", "bytes": 734262118, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_5.0_9A334_Restore.ipsw", "sha1": "c7f6d2d94b1f9f67103343e001f85be7111f6df0", "bytes": 734262118}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "3cb0d3d1eaa914a8cd22d4023de52695", "key": "e92ddbdd6f8f099d74356a6ba9c9ea3a9ca49664f60c549e7f187ee5e1a19456"},
@@ -723,6 +725,7 @@
   "build": "9A405",
   "released": "2011-11-10",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-3308.20111109.Fvgtr/iPad1,1_5.0.1_9A405_Restore.ipsw", "sha1": "732fc3ca3f5654e6f0df787c817ca16054dfb8da", "bytes": 751358387, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_5.0.1_9A405_Restore.ipsw", "sha1": "732fc3ca3f5654e6f0df787c817ca16054dfb8da", "bytes": 751358387}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "02b67045fbadfcc9ca4fdb3cbf2ea4fe", "key": "d010d42cd2030c3d6387eb6d24208d3738600d8b0912d27fbeb8939fb19c6a9b"},
@@ -756,6 +759,7 @@
   "build": "9B176",
   "released": "2012-03-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5/041-1536.20120307.XvCtw/iPad1,1_5.1_9B176_Restore.ipsw", "sha1": "f6b19779d2fe4242f87d55701e049291c978e3b3", "bytes": 761232912},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "4237068c8dd229ab98c63c5ef8d229bc", "key": "91ec6f799f12ce876fbe8bbf8de0b998fcf358ca5001af7f3016a7d782576617"},
@@ -789,7 +793,7 @@
   "build": "9B206",
   "released": "2012-05-07",
   "status": "experimental",
-  "media": ["Music"],
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-4292.02120427.Tkk0d/iPad1,1_5.1.1_9B206_Restore.ipsw", "sha1": "ad9b607439250f2337fe132890dadc4c487beca8", "bytes": 761323675, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPad1,1_5.1.1_9B206_Restore.ipsw", "sha1": "ad9b607439250f2337fe132890dadc4c487beca8", "bytes": 761323675}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8930x.img3", "iv": "4237068c8dd229ab98c63c5ef8d229bc", "key": "91ec6f799f12ce876fbe8bbf8de0b998fcf358ca5001af7f3016a7d782576617"},
@@ -1772,7 +1776,7 @@
   "build": "7C145",
   "released": "2009-09-09",
   "status": "experimental",
-  "media": ["Music", "Photos"],
+  "media": ["Music", "Photos", "Videos"],
   "status_note": "Apple never hosted this paid update; the download is a third-party mirror.",
   "source": {"kind": "ipsw", "url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_3.1.1_7C145_Restore.ipsw", "sha1": "e0d8800a4fc7cc5be6976ddbceb43c2d2a7120d7", "bytes": 277753989, "mirrors": [{"url": "https://invoxiplaygames.uk/ipsw/iPod2,1_3.1.1_7C145_Restore.ipsw", "sha1": "e0d8800a4fc7cc5be6976ddbceb43c2d2a7120d7", "bytes": 277753989}]},
   "keys": {
@@ -1808,7 +1812,7 @@
   "build": "7D11",
   "released": "2009-10-08",
   "status": "experimental",
-  "media": ["Music", "Photos"],
+  "media": ["Music", "Photos", "Videos"],
   "status_note": "Apple never hosted this paid update; the download is a third-party mirror.",
   "source": {"kind": "ipsw", "url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_3.1.2_7D11_Restore.ipsw", "sha1": "e7c83d4a5baec0e81816ae1cd1caf9a4dc38ebf0", "bytes": 277794671, "mirrors": [{"url": "https://invoxiplaygames.uk/ipsw/iPod2,1_3.1.2_7D11_Restore.ipsw", "sha1": "e7c83d4a5baec0e81816ae1cd1caf9a4dc38ebf0", "bytes": 277794671}]},
   "keys": {
@@ -2021,6 +2025,7 @@
   "build": "8A293",
   "released": "2010-06-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7435.20100621.tr49t/iPod2,1_4.0_8A293_Restore.ipsw", "sha1": "c026c373bc535496a6f901de2ba37d4a487413bf", "bytes": 330278777, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_4.0_8A293_Restore.ipsw", "sha1": "c026c373bc535496a6f901de2ba37d4a487413bf", "bytes": 330278777}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8720x.img3", "iv": "2bdc3f3b5232fcfcd8c666bbd1fa7330", "key": "10698a0feafe70d82d20ba8ad64f1f64"},
@@ -2053,6 +2058,7 @@
   "build": "8A400",
   "released": "2010-08-11",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8551.20100811.Xcder/iPod2,1_4.0.2_8A400_Restore.ipsw", "sha1": "06a42297d94461264eb64d7c8640cc5d1c19edeb", "bytes": 344248876, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_4.0.2_8A400_Restore.ipsw", "sha1": "06a42297d94461264eb64d7c8640cc5d1c19edeb", "bytes": 344248876}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8720x.img3", "iv": "2bdc3f3b5232fcfcd8c666bbd1fa7330", "key": "10698a0feafe70d82d20ba8ad64f1f64"},
@@ -2194,6 +2200,7 @@
   "build": "8B117",
   "released": "2010-09-08",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7937.20100908.ghj4f/iPod2,1_4.1_8B117_Restore.ipsw", "sha1": "97abde6207660bd876fd476275dd526d0dcf3d19", "bytes": 348027174, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_4.1_8B117_Restore.ipsw", "sha1": "97abde6207660bd876fd476275dd526d0dcf3d19", "bytes": 348027174}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8720x.img3", "iv": "34e793bdc37740688bc5da1cc8bf548d", "key": "d9c1aa3156a4dd03c958a01e062f2615"},
@@ -2371,6 +2378,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9855.20101122.Lrft6/iPod2,1_4.2.1_8C148_Restore.ipsw", "sha1": "b9efddc7bb4350c237a8d3846af61bbfc8a2f647", "bytes": 363553480, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod2,1_4.2.1_8C148_Restore.ipsw", "sha1": "b9efddc7bb4350c237a8d3846af61bbfc8a2f647", "bytes": 363553480}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8720x.img3", "iv": "75155f29cafe8dfdfdcf6fbf107664c1", "key": "6788b9096c321f1f3563f546e1809676"},
@@ -2404,6 +2412,7 @@
   "build": "7C145",
   "released": "2009-09-04",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPod/SBML/osx/bundles/061-7163.20090909.NtstR/iPod3,1_3.1.1_7C145_Restore.ipsw", "sha1": "a3eddbe2cf77858bae7087dc8b2035f0d3097e57", "bytes": 311702789, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_3.1.1_7C145_Restore.ipsw", "sha1": "a3eddbe2cf77858bae7087dc8b2035f0d3097e57", "bytes": 311702789}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "a0477fb8cc00e9109b53b628370c3cdb", "key": "944f693cea373bc909edf482a0a1f2f749c8cb7658e6b2e790678605dbddfce2"},
@@ -2438,6 +2447,7 @@
   "build": "7C146",
   "released": "2009-09-17",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-7238.20090918.23GhT/iPod3,1_3.1.1_7C146_Restore.ipsw", "sha1": "f66a7286b261137f25ddbbd84047f9a7ea181904", "bytes": 311690768},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "a0477fb8cc00e9109b53b628370c3cdb", "key": "944f693cea373bc909edf482a0a1f2f749c8cb7658e6b2e790678605dbddfce2"},
@@ -2472,6 +2482,7 @@
   "build": "7D11",
   "released": "2009-10-05",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-7271.20091008.Tch23/iPod3,1_3.1.2_7D11_Restore.ipsw", "sha1": "02dcee28d788d594a2939ab564f4f183af6ccdf2", "bytes": 311740034, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_3.1.2_7D11_Restore.ipsw", "sha1": "02dcee28d788d594a2939ab564f4f183af6ccdf2", "bytes": 311740034}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "ce865926395b4a1ee6a0e7ec4f2afbba", "key": "6abc741203d55013fd1b20f09c14aed5ba961942ba70118fc44cab65b0d83afc"},
@@ -2506,6 +2517,7 @@
   "build": "7E18",
   "released": "2010-01-22",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-7473.20100202.4i44t/iPod3,1_3.1.3_7E18_Restore.ipsw", "sha1": "375fd469b18bfc0b74c7cfa5b4d5945197b1d106", "bytes": 295870806, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_3.1.3_7E18_Restore.ipsw", "sha1": "375fd469b18bfc0b74c7cfa5b4d5945197b1d106", "bytes": 295870806}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "a47d5407fddde5cd91d6ae7130ee36fc", "key": "4f130fada5567b6c48051a285df7d92df230a042710c1e5bb5a1f62fd91a3b7f"},
@@ -2682,6 +2694,7 @@
   "build": "8A293",
   "released": "2010-06-17",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7381.20100621.AzSP9/iPod3,1_4.0_8A293_Restore.ipsw", "sha1": "36fe02b83f87d6305db572e1644841e3cd64cc7d", "bytes": 384178784, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_4.0_8A293_Restore.ipsw", "sha1": "36fe02b83f87d6305db572e1644841e3cd64cc7d", "bytes": 384178784}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "603fe27dd408d7ef3813f5c9750431c1", "key": "673eeb9ebca0c1cee531a3cc3934f034ce2e93d153d70e49ba97a1b9b8a06e62"},
@@ -2715,6 +2728,7 @@
   "build": "8A400",
   "released": "2010-08-09",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8554.20100811.Bgt54/iPod3,1_4.0.2_8A400_Restore.ipsw", "sha1": "481b21044130125b117d53207f725b70fb061855", "bytes": 384203993, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_4.0.2_8A400_Restore.ipsw", "sha1": "481b21044130125b117d53207f725b70fb061855", "bytes": 384203993}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "603fe27dd408d7ef3813f5c9750431c1", "key": "673eeb9ebca0c1cee531a3cc3934f034ce2e93d153d70e49ba97a1b9b8a06e62"},
@@ -2856,6 +2870,7 @@
   "build": "8B117",
   "released": "2010-09-03",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7941.20100908.sV9KE/iPod3,1_4.1_8B117_Restore.ipsw", "sha1": "3162bad4060b7a58c9942ddb483e5bd9bcc5269f", "bytes": 388255189, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_4.1_8B117_Restore.ipsw", "sha1": "3162bad4060b7a58c9942ddb483e5bd9bcc5269f", "bytes": 388255189}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "ca973250685c36b6844616be183b5c60", "key": "3bec85837804013e98dba2048e4bd281c613aa6dc783186da72f32415a1caa7f"},
@@ -3033,6 +3048,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9860.20101122.Xsde3/iPod3,1_4.2.1_8C148_Restore.ipsw", "sha1": "1127a042c535f7cf0be950ff8946862d5fb05b36", "bytes": 408118620, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_4.2.1_8C148_Restore.ipsw", "sha1": "1127a042c535f7cf0be950ff8946862d5fb05b36", "bytes": 408118620}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "7e04e5a857cb61e2cc0038d68fdf1a73", "key": "91aeeb5b0e932480ad557c55d1c61221481b91918c5da8516ab8383d5bc60ea1"},
@@ -3607,6 +3623,7 @@
   "build": "9A334",
   "released": "2011-10-12",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8360.20111012.New3w/iPod3,1_5.0_9A334_Restore.ipsw", "sha1": "c98ca0fd2de4271c8ffcf6f585796456c6b8fc32", "bytes": 668193167, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_5.0_9A334_Restore.ipsw", "sha1": "c98ca0fd2de4271c8ffcf6f585796456c6b8fc32", "bytes": 668193167}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "c435e272dda369cc4b7092c62aadad1d", "key": "4170df432022215513338d91f6eebb65eff9c7e420a3b1b62916747dabe09c89"},
@@ -3711,6 +3728,7 @@
   "build": "9A405",
   "released": "2011-11-08",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-3314.20111109.Mbgh6/iPod3,1_5.0.1_9A405_Restore.ipsw", "sha1": "7e963f3a1775fa4ec9ae5efeb96945d1619d2e26", "bytes": 685093259, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_5.0.1_9A405_Restore.ipsw", "sha1": "7e963f3a1775fa4ec9ae5efeb96945d1619d2e26", "bytes": 685093259}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "5ba188301df7d8057b2b9adbebd9b473", "key": "1074308cff33c81ce3af0a329571fc77eedce590dbf566972dcb493da3b986fd"},
@@ -3848,6 +3866,7 @@
   "build": "9B176",
   "released": "2012-02-29",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5/041-1547.20120307.KerHy/iPod3,1_5.1_9B176_Restore.ipsw", "sha1": "590f68b528e2ce04030528d112df6f958c333e4b", "bytes": 687571706, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_5.1_9B176_Restore.ipsw", "sha1": "590f68b528e2ce04030528d112df6f958c333e4b", "bytes": 687571706}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "f18fae5e9e3d61526ca13418291fbbb0", "key": "1d7d7d6f4bc2e275a1e5e80def296c5785042bf4c83b9d0eb72b1a2274f92fa1"},
@@ -3881,6 +3900,7 @@
   "build": "9B206",
   "released": "2012-05-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-4300.20120427.WvgGq/iPod3,1_5.1.1_9B206_Restore.ipsw", "sha1": "a0be8559d32c2553a5ec66c6f745214fdc686fec", "bytes": 687617414, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod3,1_5.1.1_9B206_Restore.ipsw", "sha1": "a0be8559d32c2553a5ec66c6f745214fdc686fec", "bytes": 687617414}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8922x.img3", "iv": "f18fae5e9e3d61526ca13418291fbbb0", "key": "1d7d7d6f4bc2e275a1e5e80def296c5785042bf4c83b9d0eb72b1a2274f92fa1"},
@@ -3914,6 +3934,7 @@
   "build": "8B117",
   "released": "2010-09-08",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8490.20100901.hyjtR/iPod4,1_4.1_8B117_Restore.ipsw", "sha1": "a464492bf6ad25d65b378c85d8b181f973ede38a", "bytes": 608360672, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_4.1_8B117_Restore.ipsw", "sha1": "a464492bf6ad25d65b378c85d8b181f973ede38a", "bytes": 608360672}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "e01950e29b6dab9990555041916ecabf", "key": "3f1c88e1297b29db7dccee73aaf66076f04abd17180ecad87d2fd993fbd97800"},
@@ -3947,6 +3968,7 @@
   "build": "8B118",
   "released": "2010-09-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9344.20100922.Urgt43/iPod4,1_4.1_8B118_Restore.ipsw", "sha1": "331fb1342f5dab8c04cead74384a1e0fc1145952", "bytes": 608360927},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "e01950e29b6dab9990555041916ecabf", "key": "3f1c88e1297b29db7dccee73aaf66076f04abd17180ecad87d2fd993fbd97800"},
@@ -4124,6 +4146,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9859.20101122.$erft/iPod4,1_4.2.1_8C148_Restore.ipsw", "sha1": "6a890696126d0cb7f9ccd6b913ecb09cf2029820", "bytes": 638177119, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_4.2.1_8C148_Restore.ipsw", "sha1": "6a890696126d0cb7f9ccd6b913ecb09cf2029820", "bytes": 638177119}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "0dcee7d1b9982793558d588d84c44af0", "key": "91866d7b929b971c72fa6e90530a5b2a361bed9486f2cb884b632f61253ed204"},
@@ -4698,6 +4721,7 @@
   "build": "9A334",
   "released": "2011-10-12",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9622.20111012.Evry3/iPod4,1_5.0_9A334_Restore.ipsw", "sha1": "668b3784966d829ec6007d10e38fa117d6799cf1", "bytes": 798571862, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_5.0_9A334_Restore.ipsw", "sha1": "668b3784966d829ec6007d10e38fa117d6799cf1", "bytes": 798571862}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "e65ce8671b58fc4c779e166eab10e8ff", "key": "9d4f781b6384b85b8b5a6cc0b33bc584163b546fca3defff21137d7dcc50d380"},
@@ -4802,6 +4826,7 @@
   "build": "9A405",
   "released": "2011-11-10",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-3313.20111109.Azxe3/iPod4,1_5.0.1_9A405_Restore.ipsw", "sha1": "ec4feac81de53459701e4baabb6b4534be3260ca", "bytes": 815525980, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_5.0.1_9A405_Restore.ipsw", "sha1": "ec4feac81de53459701e4baabb6b4534be3260ca", "bytes": 815525980}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "b7f04a12abd4d85251879d93fe522471", "key": "171bec0c8d4f8398ba1c1e791b2b49cdeb9cf5f344c9a80a29ed649ab2582ef8"},
@@ -4939,6 +4964,7 @@
   "build": "9B176",
   "released": "2012-03-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5/041-1542.20120307.Jyknq/iPod4,1_5.1_9B176_Restore.ipsw", "sha1": "65d7ee2d2fa505ce6fe91271f84f3fc9cbcc81a1", "bytes": 786432833, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_5.1_9B176_Restore.ipsw", "sha1": "65d7ee2d2fa505ce6fe91271f84f3fc9cbcc81a1", "bytes": 786432833}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "9d8c3366e67a76fba95288c2da08f677", "key": "b165b5f5eaa3f9c4caa1ead70db3075f80f2d9ad86be84cfa42188fac3ef3c09"},
@@ -4972,6 +4998,7 @@
   "build": "9B206",
   "released": "2012-05-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-4298.20120427.Tzr8w/iPod4,1_5.1.1_9B206_Restore.ipsw", "sha1": "5facf346ad939e9f11854b05237fddc1ed59e2e3", "bytes": 786429365, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_5.1.1_9B206_Restore.ipsw", "sha1": "5facf346ad939e9f11854b05237fddc1ed59e2e3", "bytes": 786429365}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "9d8c3366e67a76fba95288c2da08f677", "key": "b165b5f5eaa3f9c4caa1ead70db3075f80f2d9ad86be84cfa42188fac3ef3c09"},
@@ -5149,6 +5176,7 @@
   "build": "10A403",
   "released": "2012-09-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/Restore/041-0807.20120919.soT6X/iPod4,1_6.0_10A403_Restore.ipsw", "sha1": "7cc754118a4a8113a67635b14abee0b247936ce8", "bytes": 880768875},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "a14d007b10b063d75aae4a2b91999e6c", "key": "25705802dd917d9c651c9b8c49cc4d8874c3a67f5ce1a0adfd4758a14ddff454"},
@@ -5182,6 +5210,7 @@
   "build": "10A523",
   "released": "2012-11-01",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/041-7439.20121101.rgt54/iPod4,1_6.0.1_10A523_Restore.ipsw", "sha1": "dd1824e1cd77eea1d210094ab58b1bf15f980af1", "bytes": 880705130, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_6.0.1_10A523_Restore.ipsw", "sha1": "dd1824e1cd77eea1d210094ab58b1bf15f980af1", "bytes": 880705130}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "fa0abf89c62f9be2e9d724ce8ff92965", "key": "eddd34308ec6138bfccd1004e9ea03e7217dc685e92515613d0d06135eeff71c"},
@@ -5359,6 +5388,7 @@
   "build": "10B144",
   "released": "2013-01-28",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-0688.20130128.omwy3/iPod4,1_6.1_10B144_Restore.ipsw", "sha1": "8bc0f54ef70cab0573b635fc56764397116d4d1b", "bytes": 888641886, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPod4,1_6.1_10B144_Restore.ipsw", "sha1": "8bc0f54ef70cab0573b635fc56764397116d4d1b", "bytes": 888641886}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "0f69a6197a7af2f40b025ff13baa960f", "key": "0f7ff6214f7e3d5edd172d86502a18e9d51d1a596e0b28b92d541914ae039665"},
@@ -5428,6 +5458,7 @@
   "build": "10B146",
   "released": "2013-02-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-0732.20130215.Mkmt5/iPod4,1_6.1.2_10B146_Restore.ipsw", "sha1": "2fc5141896a0723b9723b36a98037fa17698ad5c", "bytes": 888508753},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "3f8242d052747b044ce397913ed0653f", "key": "8c55091ae1df185dabe7710ee987bc5a06460ca2930f4bf3ddf8b6fcd248fd67"},
@@ -5497,6 +5528,7 @@
   "build": "10B329",
   "released": "2013-03-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-2655.20130319.Wyt54/iPod4,1_6.1.3_10B329_Restore.ipsw", "sha1": "c9c8efb5663b8ab5faece095cefd03aa7d499f5e", "bytes": 888906964},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "02c61d93a817034d49edb0ad1ef4e77e", "key": "ac48545272fa0c0bd806d9e9e9f3d923e650f5d114b1f9aeef4dd2da326e680c"},
@@ -5530,6 +5562,7 @@
   "build": "10B400",
   "released": "2013-11-14",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-3505.20131106.PosTg/iPod4,1_6.1.5_10B400_Restore.ipsw", "sha1": "146c1390bf476c6b87f5ff63100c8e574c8a369a", "bytes": 888928473},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "4070df5cdaba5b0cec11767d0dc62b41", "key": "8d9f7126748e6912b60b74bd0d669614e23d1adf523bfa2f6af00c276891412e"},
@@ -5563,6 +5596,7 @@
   "build": "10B500",
   "released": "2014-02-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/031-3211.20140221.Placef/iPod4,1_6.1.6_10B500_Restore.ipsw", "sha1": "693bb78c8f6baf4186f7797bf3a0ef7d3b18255e", "bytes": 888894104},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "4070df5cdaba5b0cec11767d0dc62b41", "key": "8d9f7126748e6912b60b74bd0d669614e23d1adf523bfa2f6af00c276891412e"},
@@ -6467,6 +6501,7 @@
   "build": "7C144",
   "released": "2009-09-09",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-6609.20090909.mwws4/iPhone2,1_3.1_7C144_Restore.ipsw", "sha1": "527c74f87588afa1d69c1e2c08eedc88f113013a", "bytes": 321011474, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_3.1_7C144_Restore.ipsw", "sha1": "527c74f87588afa1d69c1e2c08eedc88f113013a", "bytes": 321011474}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "ed019bb2f4f55e681723211e43cff726", "key": "0ca1682b2c68e70af273680641c4980d527caccb876af37458bba20fbd2cced1"},
@@ -6501,6 +6536,7 @@
   "build": "7D11",
   "released": "2009-10-08",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-7270.20091008.phn32/iPhone2,1_3.1.2_7D11_Restore.ipsw", "sha1": "6998bb7d9e869b2d89a08853312f9457d070fb1f", "bytes": 321015700, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_3.1.2_7D11_Restore.ipsw", "sha1": "6998bb7d9e869b2d89a08853312f9457d070fb1f", "bytes": 321015700}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "b7919f6257055d54af8c66c9e90a7bb4", "key": "e9747be8a1554fe6482cd356c79be875a49c2580101dd2a754d8cc2ec1332f1c"},
@@ -6535,6 +6571,7 @@
   "build": "7E18",
   "released": "2010-02-02",
   "status": "experimental",
+  "media": ["Photos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone/061-7472.20100202.8tugj/iPhone2,1_3.1.3_7E18_Restore.ipsw", "sha1": "8cb3775e62c6f72059a962bf891b4e145b965052", "bytes": 305122343, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_3.1.3_7E18_Restore.ipsw", "sha1": "8cb3775e62c6f72059a962bf891b4e145b965052", "bytes": 305122343}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "106f935de2be3fcc56fc018124b6799b", "key": "f662084d788a33650f441451106a6b628051fc7f7697a0eb6948abcf3d151a15"},
@@ -6711,6 +6748,7 @@
   "build": "8A293",
   "released": "2010-06-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7437.20100621.5urG8/iPhone2,1_4.0_8A293_Restore.ipsw", "sha1": "e065245874c73510ceb8fa4bd9388b60d46eb252", "bytes": 396281280, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.0_8A293_Restore.ipsw", "sha1": "e065245874c73510ceb8fa4bd9388b60d46eb252", "bytes": 396281280}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "14594ce65ae3dea24cbe8b078305df05", "key": "cc88d770a3f9f94ea69acaf29644c4e5decaf2e93ad23f837c6b4dade8c539dc"},
@@ -6744,6 +6782,7 @@
   "build": "8A306",
   "released": "2010-07-15",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8618.20100715.Zapn4/iPhone2,1_4.0.1_8A306_Restore.ipsw", "sha1": "c2b6fb9a158547ce726baa1bf8f0558a71518fec", "bytes": 396322891, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.0.1_8A306_Restore.ipsw", "sha1": "c2b6fb9a158547ce726baa1bf8f0558a71518fec", "bytes": 396322891}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "14594ce65ae3dea24cbe8b078305df05", "key": "cc88d770a3f9f94ea69acaf29644c4e5decaf2e93ad23f837c6b4dade8c539dc"},
@@ -6777,6 +6816,7 @@
   "build": "8A400",
   "released": "2010-08-11",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8805.20100811.Dcr4e/iPhone2,1_4.0.2_8A400_Restore.ipsw", "sha1": "61d21363ced6e006cc226f9a0a0e9c6ed8e048ab", "bytes": 396310640, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.0.2_8A400_Restore.ipsw", "sha1": "61d21363ced6e006cc226f9a0a0e9c6ed8e048ab", "bytes": 396310640}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "14594ce65ae3dea24cbe8b078305df05", "key": "cc88d770a3f9f94ea69acaf29644c4e5decaf2e93ad23f837c6b4dade8c539dc"},
@@ -6918,6 +6958,7 @@
   "build": "8B117",
   "released": "2010-09-08",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7938.20100908.F3rCk/iPhone2,1_4.1_8B117_Restore.ipsw", "sha1": "2d1657cd33ae23b8d4e79e41fe758d09d3c52e30", "bytes": 400572133, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.1_8B117_Restore.ipsw", "sha1": "2d1657cd33ae23b8d4e79e41fe758d09d3c52e30", "bytes": 400572133}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "4223d5a6bc4d358031df8958c427a369", "key": "fdd2a888a079b6421e19bc7e03d5242ffe7822029bab5c030377e9eb5a98ccb3"},
@@ -7095,6 +7136,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "untested",
+  "media": ["Music", "Photos", "Videos"],
   "status_note": "Apple no longer hosts this build; the download is the iOS Firmware Exhibit Collection's copy on archive.org (third party).",
   "source": {"kind": "ipsw", "url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.2.1_8C148_Restore.ipsw", "sha1": "99ca05e90989723aa439844652a3e9dd32e72e92", "bytes": 420801802},
   "keys": {
@@ -7129,6 +7171,7 @@
   "build": "8C148a",
   "released": "2010-11-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9895.20101122.Cdew2/iPhone2,1_4.2.1_8C148a_Restore.ipsw", "sha1": "2787bb9fbf18594279d05682e6fd16d2b9612a2a", "bytes": 420813164, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_4.2.1_8C148a_Restore.ipsw", "sha1": "2787bb9fbf18594279d05682e6fd16d2b9612a2a", "bytes": 420813164}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "b0b7e77fe61890f56f9e0ec76fd4f494", "key": "ddaeb8edb234be58ddb6cfece96253c15d3c4dfc48b9b56d2e9228a09c360f45"},
@@ -7713,6 +7756,7 @@
   "build": "9A334",
   "released": "2011-10-12",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-8356.20111012.SQRDT/iPhone2,1_5.0_9A334_Restore.ipsw", "sha1": "b7ee3a0f0243d333806dafd53946e84a36bd2349", "bytes": 701195503, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_5.0_9A334_Restore.ipsw", "sha1": "b7ee3a0f0243d333806dafd53946e84a36bd2349", "bytes": 701195503}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "8f275b1aaaea81617c07a423f18d602f", "key": "f7f2209e7d3e7161729921bfc5fb89e1da45cf2a7b2d5fddfe83ac1e6f3ec310"},
@@ -7817,6 +7861,7 @@
   "build": "9A405",
   "released": "2011-11-10",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-3307.20111109.5tGhu/iPhone2,1_5.0.1_9A405_Restore.ipsw", "sha1": "647e869bd1ba0de616082611131c541bac5bd088", "bytes": 718181968, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_5.0.1_9A405_Restore.ipsw", "sha1": "647e869bd1ba0de616082611131c541bac5bd088", "bytes": 718181968}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "f74298479e4985d095fa0def652d74a7", "key": "d2f1313381205a765eb850fad8e9431b7a05a8b51b995835d9c2d280540c9a92"},
@@ -7954,6 +7999,7 @@
   "build": "9B176",
   "released": "2012-03-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5/041-1535.20120307.Jer6N/iPhone2,1_5.1_9B176_Restore.ipsw", "sha1": "eee0c10a6c023422595d567d60abd34364f9f59f", "bytes": 720402781, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_5.1_9B176_Restore.ipsw", "sha1": "eee0c10a6c023422595d567d60abd34364f9f59f", "bytes": 720402781}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "f59b29696c535ffdceee454ab58de67c", "key": "f4d6950c7e94f7af98df4e87880213eb2456ca6bd87f84ae219ff64973351774"},
@@ -7987,6 +8033,7 @@
   "build": "9B206",
   "released": "2012-05-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-4347.20120427.o2yov/iPhone2,1_5.1.1_9B206_Restore.ipsw", "sha1": "2a35ac00cd00c4bc499a971391b99471bf2fdd05", "bytes": 720391327, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_5.1.1_9B206_Restore.ipsw", "sha1": "2a35ac00cd00c4bc499a971391b99471bf2fdd05", "bytes": 720391327}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "f59b29696c535ffdceee454ab58de67c", "key": "f4d6950c7e94f7af98df4e87880213eb2456ca6bd87f84ae219ff64973351774"},
@@ -8164,6 +8211,7 @@
   "build": "10A403",
   "released": "2012-09-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/Restore/041-7173.20120919.sDDMh/iPhone2,1_6.0_10A403_Restore.ipsw", "sha1": "85963dfe1c0febf34d9871ee32b891b93d47b2b6", "bytes": 818338725},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "b61f56f102db495b144df6c8b2c2d3b6", "key": "7fecf501498ffd79cd407788ae496f4b5d3902a4d3da863d54c9eafa597c52f3"},
@@ -8197,6 +8245,7 @@
   "build": "10A523",
   "released": "2012-11-01",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/041-7949.20121101.Ortn5/iPhone2,1_6.0.1_10A523_Restore.ipsw", "sha1": "38bda2110c9b6b2227a61ee57c9e9ad7cb0fbfbc", "bytes": 818325876, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_6.0.1_10A523_Restore.ipsw", "sha1": "38bda2110c9b6b2227a61ee57c9e9ad7cb0fbfbc", "bytes": 818325876}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "728cdc6639bb284a0898c26b65606633", "key": "0d0014d893a32d5d94aec9d59d7c85cf964da3974a5693eb01be3d52cb832778"},
@@ -8374,6 +8423,7 @@
   "build": "10B141",
   "released": "2013-01-28",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/041-6493.20130128.sh4rG/iPhone2,1_6.1_10B141_Restore.ipsw", "sha1": "db88aa859cb15af1c70e5e4b30e4056367bd998d", "bytes": 822631819, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone2,1_6.1_10B141_Restore.ipsw", "sha1": "db88aa859cb15af1c70e5e4b30e4056367bd998d", "bytes": 822631819}]},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "d067d5d7e0a1db98108843721145fbbc", "key": "6a6771d69384986b12f6698ed5cc06444f00a4dda37aae22409ecef985a2b56c"},
@@ -8443,6 +8493,7 @@
   "build": "10B146",
   "released": "2013-02-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-0744.20130215.2E34r/iPhone2,1_6.1.2_10B146_Restore.ipsw", "sha1": "17174031c923080be0b7cfa6f550aa8008b63583", "bytes": 822609618},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "3fb62bd17ec20653e501a556f03d40c3", "key": "2de185050a14ea3cc682ff532c9e3b9908fa4716a869eb69ae914918a78ccf96"},
@@ -8512,6 +8563,7 @@
   "build": "10B329",
   "released": "2013-03-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-2371.20130319.715gt/iPhone2,1_6.1.3_10B329_Restore.ipsw", "sha1": "15e92a89ff3caf51523962fdb125e918d78c1807", "bytes": 822996462},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "1276f1267d7208b132167883bc36d5bd", "key": "b469c98bc66e256c76671391d6740d01874858a11c718b7ad6405518bc755cfd"},
@@ -8545,6 +8597,7 @@
   "build": "10B500",
   "released": "2014-02-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-3457.20140221.Btt3e/iPhone2,1_6.1.6_10B500_Restore.ipsw", "sha1": "eb7f495760a500bb284b07f11492a4fadf687802", "bytes": 822970962},
   "keys": {
    "AppleLogo": {"file": "applelogo.s5l8920x.img3", "iv": "33787ba6a52afd52cab7080e96d01056", "key": "25ec25f7f2962bc8f655cc039aa463c2a0d0a1f78db7968f741ada0ba37d9ae2"},
@@ -8578,6 +8631,7 @@
   "build": "8A293",
   "released": "2010-06-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7380.20100621,Vfgb5/iPhone3,1_4.0_8A293_Restore.ipsw", "sha1": "171c2a3995fa149f2a369ccd87f82c5c30da3f88", "bytes": 607363121, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_4.0_8A293_Restore.ipsw", "sha1": "171c2a3995fa149f2a369ccd87f82c5c30da3f88", "bytes": 607363121}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "eab39b46e705b57f820beeea28ea051e", "key": "0feb8e5306e2a529e4f7b39e24fc49e90669c15c218d29c55ac734f7516c5519"},
@@ -8611,6 +8665,7 @@
   "build": "8A306",
   "released": "2010-07-15",
   "status": "untested",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8619.20100715.4Pnsx/iPhone3,1_4.0.1_8A306_Restore.ipsw", "sha1": "a9cf20679273b7e502ab384854ba96cc2a54d532", "bytes": 607380127, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_4.0.1_8A306_Restore.ipsw", "sha1": "a9cf20679273b7e502ab384854ba96cc2a54d532", "bytes": 607380127}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "eab39b46e705b57f820beeea28ea051e", "key": "0feb8e5306e2a529e4f7b39e24fc49e90669c15c218d29c55ac734f7516c5519"},
@@ -8644,6 +8699,7 @@
   "build": "8A400",
   "released": "2010-08-11",
   "status": "untested",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-8807.20100811.3Edre/iPhone3,1_4.0.2_8A400_Restore.ipsw", "sha1": "19eb071cdb9f1601b106825d0a16b1449c6eef8c", "bytes": 607375880, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_4.0.2_8A400_Restore.ipsw", "sha1": "19eb071cdb9f1601b106825d0a16b1449c6eef8c", "bytes": 607375880}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "eab39b46e705b57f820beeea28ea051e", "key": "0feb8e5306e2a529e4f7b39e24fc49e90669c15c218d29c55ac734f7516c5519"},
@@ -8785,6 +8841,7 @@
   "build": "8B117",
   "released": "2010-09-08",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-7939.20100908.Lcyg3/iPhone3,1_4.1_8B117_Restore.ipsw", "sha1": "a3f8a333ca181146b862ca6a59c9a6e7c27eba0b", "bytes": 618501195, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_4.1_8B117_Restore.ipsw", "sha1": "a3f8a333ca181146b862ca6a59c9a6e7c27eba0b", "bytes": 618501195}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "e01950e29b6dab9990555041916ecabf", "key": "3f1c88e1297b29db7dccee73aaf66076f04abd17180ecad87d2fd993fbd97800"},
@@ -8962,6 +9019,7 @@
   "build": "8C148",
   "released": "2010-11-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/061-9858.20101122.Er456/iPhone3,1_4.2.1_8C148_Restore.ipsw", "sha1": "366b28e9c95936bd4b11a84d54fefaf079fd6411", "bytes": 654550096, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_4.2.1_8C148_Restore.ipsw", "sha1": "366b28e9c95936bd4b11a84d54fefaf079fd6411", "bytes": 654550096}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "0dcee7d1b9982793558d588d84c44af0", "key": "91866d7b929b971c72fa6e90530a5b2a361bed9486f2cb884b632f61253ed204"},
@@ -9538,6 +9596,7 @@
   "build": "9A334",
   "released": "2011-10-12",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-8358.20111012.FFc34/iPhone3,1_5.0_9A334_Restore.ipsw", "sha1": "aacd559fee6652685c89de74b89a62de27ce938f", "bytes": 811948143, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_5.0_9A334_Restore.ipsw", "sha1": "aacd559fee6652685c89de74b89a62de27ce938f", "bytes": 811948143}]},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "e65ce8671b58fc4c779e166eab10e8ff", "key": "9d4f781b6384b85b8b5a6cc0b33bc584163b546fca3defff21137d7dcc50d380"},
@@ -9642,6 +9701,7 @@
   "build": "9A405",
   "released": "2011-11-10",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iPhone4/041-3309.20111109.64rtg/iPhone3,1_5.0.1_9A405_Restore.ipsw", "sha1": "a123b049c7a03cc952c6328de998d4f74d49c18b", "bytes": 829060929},
   "keys": {
    "AppleLogo": {"file": "applelogo-640x960.s5l8930x.img3", "iv": "b7f04a12abd4d85251879d93fe522471", "key": "171bec0c8d4f8398ba1c1e791b2b49cdeb9cf5f344c9a80a29ed649ab2582ef8"},
@@ -9779,6 +9839,7 @@
   "build": "9B176",
   "released": "2012-03-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5/041-1537.20120307.EJrm4/iPhone3,1_5.1_9B176_Restore.ipsw", "sha1": "1454b106551053804f3ac39fff4c17454cb6ae90", "bytes": 821606151, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_5.1_9B176_Restore.ipsw", "sha1": "1454b106551053804f3ac39fff4c17454cb6ae90", "bytes": 821606151}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "9d8c3366e67a76fba95288c2da08f677", "key": "b165b5f5eaa3f9c4caa1ead70db3075f80f2d9ad86be84cfa42188fac3ef3c09"},
@@ -9812,6 +9873,7 @@
   "build": "9B206",
   "released": "2012-05-07",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-4293.20120427.3DRyb/iPhone3,1_5.1.1_9B206_Restore.ipsw", "sha1": "a03a29c4dd2016edb3da72c3e26e30fbf0f42b2f", "bytes": 821442817, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_5.1.1_9B206_Restore.ipsw", "sha1": "a03a29c4dd2016edb3da72c3e26e30fbf0f42b2f", "bytes": 821442817}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "9d8c3366e67a76fba95288c2da08f677", "key": "b165b5f5eaa3f9c4caa1ead70db3075f80f2d9ad86be84cfa42188fac3ef3c09"},
@@ -9845,6 +9907,7 @@
   "build": "9B208",
   "released": "2012-05-25",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS5.1.1/041-6051.2012.0525.Cvby7/iPhone3,1_5.1.1_9B208_Restore.ipsw", "sha1": "1209f57051f675d0328c08a894b073589f9eeb20", "bytes": 821572938, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_5.1.1_9B208_Restore.ipsw", "sha1": "1209f57051f675d0328c08a894b073589f9eeb20", "bytes": 821572938}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "230c11190485c39a171d80fd79a6d40a", "key": "394016a4ceea8bba7dbc9b21f2141ee47e6c0a4aa300354774422f1128a2aab2"},
@@ -10022,6 +10085,7 @@
   "build": "10A403",
   "released": "2012-09-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/Restore/041-7175.20120919.wvv7Y/iPhone3,1_6.0_10A403_Restore.ipsw", "sha1": "4553077c61fd9c487c906ee419d2159f807a00fb", "bytes": 930637985},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "a14d007b10b063d75aae4a2b91999e6c", "key": "25705802dd917d9c651c9b8c49cc4d8874c3a67f5ce1a0adfd4758a14ddff454"},
@@ -10055,6 +10119,7 @@
   "build": "10A523",
   "released": "2012-11-01",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6/041-7950.20121101.Lmr45/iPhone3,1_6.0.1_10A523_Restore.ipsw", "sha1": "3d123107c71588fef6f03bd1fc8ca42bda400621", "bytes": 930639149, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_6.0.1_10A523_Restore.ipsw", "sha1": "3d123107c71588fef6f03bd1fc8ca42bda400621", "bytes": 930639149}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "fa0abf89c62f9be2e9d724ce8ff92965", "key": "eddd34308ec6138bfccd1004e9ea03e7217dc685e92515613d0d06135eeff71c"},
@@ -10232,6 +10297,7 @@
   "build": "10B144",
   "released": "2013-01-28",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-0682.20130128.mefc4/iPhone3,1_6.1_10B144_Restore.ipsw", "sha1": "2dcaae314ae8e0a353ad43010159cf15f7f6bd4e", "bytes": 938516113, "mirrors": [{"url": "https://archive.org/download/iOS_Firmware_Exhibit_Collection/iPhone3,1_6.1_10B144_Restore.ipsw", "sha1": "2dcaae314ae8e0a353ad43010159cf15f7f6bd4e", "bytes": 938516113}]},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "0f69a6197a7af2f40b025ff13baa960f", "key": "0f7ff6214f7e3d5edd172d86502a18e9d51d1a596e0b28b92d541914ae039665"},
@@ -10301,6 +10367,7 @@
   "build": "10B146",
   "released": "2013-02-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-0722.20130215.BzrgV/iPhone3,1_6.1.2_10B146_Restore.ipsw", "sha1": "b62c043338898893c210bb81e608b4b099de7c5f", "bytes": 938592821},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "3f8242d052747b044ce397913ed0653f", "key": "8c55091ae1df185dabe7710ee987bc5a06460ca2930f4bf3ddf8b6fcd248fd67"},
@@ -10370,6 +10437,7 @@
   "build": "10B329",
   "released": "2013-03-19",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS6.1/091-2610.20130319.Bedr4/iPhone3,1_6.1.3_10B329_Restore.ipsw", "sha1": "f8c53328656f2708e1d2bcb793f12ae46dd4eb23", "bytes": 938891219},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x.s5l8930x.img3", "iv": "02c61d93a817034d49edb0ad1ef4e77e", "key": "ac48545272fa0c0bd806d9e9e9f3d923e650f5d114b1f9aeef4dd2da326e680c"},
@@ -10613,6 +10681,7 @@
   "build": "11A465",
   "released": "2013-09-18",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7/091-9485.20130918.Xa98u/iPhone3,1_7.0_11A465_Restore.ipsw", "sha1": "c4e75b4c2be8480c1b61cd1f1a0c9c3291b03db7", "bytes": 1201795093},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "d4ca7e1f04987ad8aba504aebc6c322f", "key": "0f784be074c3655e3fdf62aa35a404cfea2b99c07e4262769256c00c1290b812"},
@@ -10645,6 +10714,7 @@
   "build": "11A501",
   "released": "2013-09-26",
   "status": "untested",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7/091-9871.20130924.7imYu/iPhone3,1_7.0.2_11A501_Restore.ipsw", "sha1": "d4d085097955b64a9c2722531282e708027dd263", "bytes": 1202285197},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "8aff845bf509596849378a95c1886929", "key": "45c4a90d7ad31142ba74a540dacfc18d394b9e915e5ebe63f1bbc8ab65e9e0aa"},
@@ -10677,6 +10747,7 @@
   "build": "11B511",
   "released": "2013-10-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7/031-1038.20131022.Llkit/iPhone3,1_7.0.3_11B511_Restore.ipsw", "sha1": "5fb262e82c64ca5ed0cf4773f283a83b1f8b4969", "bytes": 1201639385},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "5ffc828fe18f967778322463a2d864da", "key": "f639b703bc74a5e246e2362a78358b1a960f92daa50622c6ed08f719f573ba16"},
@@ -10709,6 +10780,7 @@
   "build": "11B554a",
   "released": "2013-11-14",
   "status": "untested",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7/031-1831.20131114.P3wE4/iPhone3,1_7.0.4_11B554a_Restore.ipsw", "sha1": "964c2e3e152cc4ca3efe4cedbc71aa7b06350555", "bytes": 1201639929},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "99c8021b5921fa42dcdc05493b2aac2a", "key": "4f5f04d0ae5d1f776ef26afc8d155ef781683d5155aeb607f1dab350cb279ae1"},
@@ -10741,6 +10813,7 @@
   "build": "11B651",
   "released": "2014-02-21",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7/031-3020.20140221.8j5GW/iPhone3,1_7.0.6_11B651_Restore.ipsw", "sha1": "7fee14771f451dbb5c64d536b521ff199f6c6cd9", "bytes": 1201645522},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "37e3909dfb8d38d4c0cd070c12180b39", "key": "98fd6c5260d2fbc2a4356d949668fb63a41b8caf5f44cde34a0437a48e4b152c"},
@@ -10913,6 +10986,7 @@
   "build": "11D169",
   "released": "2014-03-10",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7.1/031-4639.20140310.Pvdbt/iPhone3,1_7.1_11D169_Restore.ipsw", "sha1": "c657505db208a73a5e27708816b87e8be3997d9a", "bytes": 1204820437},
   "keys": {
    "BatteryCharging0": {"file": "batterycharging0@2x~iphone.s5l8930x.img3", "iv": "12c6df1a6876213f0e95acf3a0c936a6", "key": "d6c44f41e6bf83bb2b2c46e5ea3839b97f454b62de3b1028dcef88cb45ef4168"},
@@ -10944,6 +11018,7 @@
   "build": "11D201",
   "released": "2014-04-22",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7.1/031-00357.20140425.ZFJJw/iPhone3,1_7.1.1_11D201_Restore.ipsw", "sha1": "49469a01e7c3ffbbd0432610f4b44741623527a4", "bytes": 1204690621},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "4f66381c0df73a7977c70c82ef039e6a", "key": "1eef36f8b99d39e1f84898e0e4dd32cdeac37aedc4b954fae8ffdcb3c55df9d6"},
@@ -10976,6 +11051,7 @@
   "build": "11D257",
   "released": "2014-06-30",
   "status": "experimental",
+  "media": ["Music", "Photos", "Videos"],
   "source": {"kind": "ipsw", "url": "https://secure-appldnld.apple.com/iOS7.1/031-4812.20140627.cq6y8/iPhone3,1_7.1.2_11D257_Restore.ipsw", "sha1": "81da17b3e893a61508fe203849b7e1f60e2127b1", "bytes": 1204958925},
   "keys": {
    "AppleLogo": {"file": "applelogo@2x~iphone.s5l8930x.img3", "iv": "2287b716b833ba84566cf365e3368d37", "key": "73f0cef0f12ed5e43b53c87373a2be672481c4fc0f1f542c5e8da8b7d518611f"},
