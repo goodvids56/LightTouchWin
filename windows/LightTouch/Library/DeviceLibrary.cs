@@ -32,6 +32,8 @@ internal sealed class DeviceRecord
     [JsonIgnore] public string WritableNor => Path.Combine(Data, "nor.bin");
     [JsonIgnore] public string Logs => Path.Combine(Directory, "logs");
     [JsonIgnore] public string Lease => Path.Combine(Directory, "running.lock");
+    /// The running device's usbmuxd client address (USBMUXD_SOCKET_ADDRESS), while it runs.
+    [JsonIgnore] public string UsbMuxAddress => Path.Combine(Directory, "usbmux-address");
     [JsonIgnore] public Board? BoardFacts => Device.Board.Find(Board);
 
     [JsonIgnore]

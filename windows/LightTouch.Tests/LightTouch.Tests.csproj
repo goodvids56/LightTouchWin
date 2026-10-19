@@ -13,6 +13,7 @@
     <Compile Include="../LightTouch/Device/*.cs" LinkBase="App/Device" />
     <Compile Include="../LightTouch/Library/*.cs" LinkBase="App/Library" />
     <Compile Include="../LightTouch/Native/Qemu.cs" LinkBase="App/Native" />
+    <Compile Include="../LightTouch/Native/Plist.cs" LinkBase="App/Native" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

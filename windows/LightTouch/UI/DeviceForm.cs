@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using LightTouch.Device;
 using LightTouch.Library;
 using LightTouch.Native;
+using LightTouch.Services;
 
 namespace LightTouch.UI;
 
@@ -26,6 +27,11 @@ internal sealed class DeviceForm : Form
     private readonly System.Windows.Forms.Timer pump = new();
     private FileStream? lease;
     private UsbMux? usbMux;
+    private readonly DeviceServices services = new();
+    private readonly ToolStripDropDownButton appsMenu = new("Apps") { Enabled = false };
+    private readonly System.Windows.Forms.Timer usbWatch = new() { Interval = 5000 };
+    private readonly SemaphoreSlim installs = new(1, 1);
+    private bool usbReady;
     private Thread? qemuThread;
     private PreparedDevice? prepared;
     private ulong serial;
@@ -67,7 +73,15 @@ internal sealed class DeviceForm : Form
         power.DropDownItems.Add("Shut Down", null, (_, _) => GuestShutdown());
         power.DropDownItems.Add("Restart", null, (_, _) => { if (Qemu.Ready()) Qemu.Reset(); });
         power.DropDownItems.Add("Hold Sleep/Wake (slide to power off)", null, (_, _) => HoldPower());
+        appsMenu.ToolTipText = "Install and remove apps. Available once the device has connected over USB.";
+        appsMenu.DropDownItems.Add("Install App…", null, (_, _) => PickApps());
+        appsMenu.DropDownItems.Add("Installed Apps…", null, (_, _) => ShowApps());
+        toolbar.Items.Add(appsMenu);
         toolbar.Items.Add(power);
+        AllowDrop = true;
+        DragEnter += (_, e) => e.Effect = DroppedFiles(e).Length > 0 && usbReady ? DragDropEffects.Copy : DragDropEffects.None;
+        DragDrop += async (_, e) => await InstallAll(DroppedFiles(e));
+        usbWatch.Tick += async (_, _) => await CheckUsb();
 
         // The form is black for the letterbox; the bars keep the system's colors.
         toolbar.BackColor = statusBar.BackColor = SystemColors.Control;
@@ -156,6 +170,7 @@ internal sealed class DeviceForm : Form
         var audio = settings.Audio && WaveOutGetNumDevs() > 0;
         // The USB bridge listens before the guest's USB core comes up and dials it.
         usbMux = UsbMux.Start(Path.Combine(record.Data, "usbmuxd"), Path.Combine(record.Logs, "usbmuxd.log"));
+        if (usbMux != null) File.WriteAllText(record.UsbMuxAddress, usbMux.ClientAddress);
         var options = new BootOptions(record.Network, settings.LocalNetwork, audio, settings.VerboseBoot,
             UsbAddress: usbMux?.GuestAddress);
         var config = device.Configuration(hardware, options, Path.Combine(record.Logs, "serial.log"));
@@ -179,6 +194,7 @@ internal sealed class DeviceForm : Form
         { Name = "qemu-main", IsBackground = true };
         qemuThread.Start();
         started = true;
+        if (usbMux != null) usbWatch.Start();
         SetStatus($"Starting {board.MarketingName}…");
         pump.Start();
         screen.Focus();
@@ -382,6 +398,84 @@ internal sealed class DeviceForm : Form
         SetStatus("Pasted the clipboard's text into the device's pasteboard.");
     }
 
+    // MARK: - Apps
+
+    /// Polls until installation_proxy answers: the guest connects over USB about a minute into its start, and its
+    /// services come up a little after lockdownd.
+    private async Task CheckUsb()
+    {
+        if (usbReady || halting) return;
+        if (usbMux?.IsRunning != true)
+        {
+            usbWatch.Stop();
+            appsMenu.ToolTipText = "The USB bridge stopped; restart the device for app management.";
+            return;
+        }
+        usbWatch.Stop();
+        if (await services.Ready())
+        {
+            usbReady = true;
+            appsMenu.Enabled = true;
+            appsMenu.ToolTipText = "Install and remove apps. You can also drop .ipa files on the window.";
+            SetStatus("Connected over USB");
+            return;
+        }
+        if (!halting) usbWatch.Start();
+    }
+
+    private static string[] DroppedFiles(DragEventArgs e) =>
+        e.Data?.GetData(DataFormats.FileDrop) is string[] files
+            ? files.Where(f => f.EndsWith(".ipa", StringComparison.OrdinalIgnoreCase)).ToArray()
+            : [];
+
+    private void PickApps()
+    {
+        using var dialog = new OpenFileDialog { Title = "Install App", Filter = "iOS apps (*.ipa)|*.ipa", Multiselect = true };
+        if (dialog.ShowDialog(this) == DialogResult.OK) _ = InstallAll(dialog.FileNames);
+    }
+
+    private void ShowApps()
+    {
+        using var form = new AppsForm(record.Name, services, InstallOne);
+        form.ShowDialog(this);
+    }
+
+    private async Task InstallAll(IEnumerable<string> ipas)
+    {
+        foreach (var ipa in ipas) await InstallOne(ipa);
+    }
+
+    /// One .ipa, after any install already running; the status bar follows it and a failure says why.
+    private async Task InstallOne(string ipa)
+    {
+        var name = Path.GetFileNameWithoutExtension(ipa);
+        try
+        {
+            name = DeviceServices.ReadIpa(ipa)?.Name ?? name;
+        }
+        catch (InvalidDataException)
+        {
+        }
+        await installs.WaitAsync();
+        try
+        {
+            SetStatus($"Installing {name}…");
+            await services.Install(ipa, (percent, step) => BeginInvoke(() =>
+                SetStatus(percent >= 0 ? $"Installing {name}: {step} {percent}%" : $"Installing {name}: {step}")));
+            SetStatus($"Installed {name}.");
+        }
+        catch (Exception error) when (error is DeviceServiceException or IOException or InvalidDataException)
+        {
+            SetStatus($"{name} didn't install.");
+            MessageBox.Show(this, $"{name} didn't install: {error.Message}", "Install App", MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
+        }
+        finally
+        {
+            installs.Release();
+        }
+    }
+
     private void SaveScreenshot()
     {
         using var image = screen.Snapshot();
@@ -455,6 +549,7 @@ internal sealed class DeviceForm : Form
     {
         base.OnFormClosed(e);
         usbMux?.Dispose();
+        File.Delete(record.UsbMuxAddress);
         lease?.Dispose();
     }
 

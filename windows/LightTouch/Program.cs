@@ -1,5 +1,6 @@
 // Light Touch for Windows. With no arguments: the device library. `run DEVICE_DIR`: that one device, in this process
 // (the library starts each device that way, as the Mac app spawns a LightTouchDevice helper per device).
+// `apps DEVICE_DIR list | install IPA... | remove BUNDLE_ID`: a running device's apps, from a console.
 
 using LightTouch.Library;
 using LightTouch.UI;
@@ -35,6 +36,7 @@ internal static class Program
             Console.Error.WriteLine($"LightTouch: emulator exited with {form.ExitCode}");
             return form.ExitCode;
         }
+        if (args is ["apps", var device, .. var rest]) return AppsCommand.Run(device, rest);
         Application.Run(new LibraryForm(library));
         return 0;
     }
