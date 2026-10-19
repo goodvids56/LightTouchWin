@@ -195,9 +195,50 @@ internal sealed class DeviceServices
     // MARK: - Uploads (AFC)
 
     /// Uploads `local` to `remote` (relative to the media root), creating its folders; an interrupted upload leaves
-    /// nothing at `remote`. `progress` gets the fraction sent.
-    public Task<string> Upload(string local, string remote, Action<double>? progress = null, CancellationToken cancel = default) =>
-        Run(s => UploadFile(s.Afc(), local, remote, progress, cancel), cancel);
+    /// nothing at `remote`. `progress` gets the fraction sent. With `reuseIdentical`, a file already there with the
+    /// same bytes stays (media staging: a retry after an uncertain commit finds what it sent).
+    public Task<string> Upload(string local, string remote, Action<double>? progress = null, bool reuseIdentical = false,
+        CancellationToken cancel = default) =>
+        Run(s => reuseIdentical && SameFile(s.Afc(), local, remote, cancel) ? remote : UploadFile(s.Afc(), local, remote, progress, cancel),
+            cancel);
+
+    /// Whether `remote` holds exactly `local`'s bytes: compared in full, not by size alone.
+    private static unsafe bool SameFile(IntPtr afc, string local, string remote, CancellationToken cancel)
+    {
+        if (AfcGetFileInfo(afc, remote, out var info) != 0) return false;
+        var fields = TakeList(info);
+        var size = -1L;
+        for (var i = 0; i + 1 < fields.Count; i += 2)
+        {
+            if (fields[i] == "st_size") long.TryParse(fields[i + 1], out size);
+        }
+        using var input = File.OpenRead(local);
+        if (size != input.Length || AfcOpen(afc, remote, AfcReadOnly, out var handle) != 0) return false;
+        try
+        {
+            var mine = new byte[1 << 16];
+            var theirs = new byte[1 << 16];
+            int read;
+            while ((read = input.Read(mine, 0, mine.Length)) > 0)
+            {
+                cancel.ThrowIfCancellationRequested();
+                for (var offset = 0; offset < read;)
+                {
+                    fixed (byte* p = theirs)
+                    {
+                        if (AfcRead(afc, handle, p, (uint)(read - offset), out var count) != 0 || count == 0) return false;
+                        if (!theirs.AsSpan(0, (int)count).SequenceEqual(mine.AsSpan(offset, (int)count))) return false;
+                        offset += (int)count;
+                    }
+                }
+            }
+            return true;
+        }
+        finally
+        {
+            AfcClose(afc, handle);
+        }
+    }
 
     private static unsafe string UploadFile(IntPtr afc, string local, string remote, Action<double>? progress,
         CancellationToken cancel)
@@ -287,7 +328,7 @@ internal sealed class DeviceServices
         }
         progress?.Invoke(0, "Uploading");
         var staged = await Upload(ipa, $"PublicStaging/LightTouch-{Guid.NewGuid():N}.ipa",
-            f => progress?.Invoke((int)(f * 20), "Uploading"), cancel);
+            f => progress?.Invoke((int)(f * 20), "Uploading"), cancel: cancel);
         try
         {
             await Perform(Command.Install, staged, progress, cancel);
@@ -296,7 +337,7 @@ internal sealed class DeviceServices
         catch (DeviceServiceException e) when (e.Message.Contains("ApplicationAlreadyInstalled", StringComparison.Ordinal))
         {
             var again = await Upload(ipa, $"PublicStaging/LightTouch-{Guid.NewGuid():N}.ipa",
-                f => progress?.Invoke((int)(f * 20), "Uploading"), cancel);
+                f => progress?.Invoke((int)(f * 20), "Uploading"), cancel: cancel);
             await Perform(Command.ArchiveData, bundle.Id, progress, cancel);
             try
             {

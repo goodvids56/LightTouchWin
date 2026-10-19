@@ -147,6 +147,35 @@ internal static unsafe partial class Qemu
     [return: MarshalAs(UnmanagedType.U1)]
     public static partial bool HardwareKeyboard([MarshalAs(UnmanagedType.U1)] bool attached);
 
+    // MARK: - Guest agent (qemu-ios contrib/it-agent/README.md): "<id> <op> <args>\n<base64 body>" in,
+    // "<id> <status>\n<base64 output>" out, polled by GuestAgent.
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_agent_request", StringMarshalling = StringMarshalling.Utf8)]
+    [return: MarshalAs(UnmanagedType.U1)]
+    public static partial bool AgentRequest(string wire);
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_agent_cancel", StringMarshalling = StringMarshalling.Utf8)]
+    public static partial void AgentCancel(string id);
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_agent_result")]
+    private static partial IntPtr AgentResultNative();
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_agent_free_result")]
+    private static partial void AgentFreeResult(IntPtr result);
+
+    /// The next finished request's result, or null.
+    public static string? AgentResult()
+    {
+        var result = AgentResultNative();
+        if (result == IntPtr.Zero) return null;
+        try { return Marshal.PtrToStringUTF8(result); }
+        finally { AgentFreeResult(result); }
+    }
+
+    /// 1 while the guest's agent answers.
+    [LibraryImport(Library, EntryPoint = "qemu_ios_agent_status")]
+    public static partial int AgentStatus();
+
     [LibraryImport("msvcrt.dll", EntryPoint = "_set_fmode")]
     private static partial int SetFileMode(int mode);
 

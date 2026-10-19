@@ -25,4 +25,8 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- The firmware catalog the Mac app ships: which libraries media import may add to on each build (`media`). -->
+    <EmbeddedResource Include="..\..\LightTouchMac\Resources\firmware-catalog.json" LogicalName="firmware-catalog.json" />
+  </ItemGroup>
 </Project>

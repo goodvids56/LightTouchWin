@@ -1,14 +1,25 @@
-# Light Touch for Windows: the emulator cross-built with mingw-w64 (windows/scripts/build-qemu.sh, in Fedora as
-# windows/Dockerfile), the app's tests and publish with the .NET 8 SDK, and the zip. A v* tag also makes a release.
+# Light Touch for Windows: the emulator, the USB services and the media tools cross-built with mingw-w64
+# (windows/scripts/build-qemu.sh, build-usb.sh and build-media.sh, in Fedora as windows/Dockerfile), the app's tests and
+# publish with the .NET 8 SDK, and the zip. A v* tag also makes a release.
 name: Windows build
 
 on:
   push:
     branches: ["**"]
     tags: ["v*"]
-    paths: ["windows/**", "build-support/sources.json", ".github/workflows/windows.yml"]
+    paths:
+      - "windows/**"
+      - "build-support/sources.json"
+      - "build-support/dependencies.json"
+      - "LightTouchMac/Resources/firmware-catalog.json"
+      - ".github/workflows/windows.yml"
   pull_request:
-    paths: ["windows/**", "build-support/sources.json", ".github/workflows/windows.yml"]
+    paths:
+      - "windows/**"
+      - "build-support/sources.json"
+      - "build-support/dependencies.json"
+      - "LightTouchMac/Resources/firmware-catalog.json"
+      - ".github/workflows/windows.yml"
   workflow_dispatch:
 
 permissions:
@@ -34,11 +45,15 @@ jobs:
           path: |
             windows/work/emulator-build
             windows/work/usb-build/downloads
+            windows/work/media-build/downloads
+            windows/work/media-build/lzfse
           key: emulator-${{ hashFiles('build-support/sources.json', 'build-support/dependencies.json', 'windows/patches/**', 'windows/scripts/*.sh', 'windows/usbmuxd/**') }}
       - name: Build qemu-arm.dll
         run: WORK_DIR=windows/work/emulator-build windows/scripts/build-qemu.sh windows/work/emulator
       - name: Build usbmuxd and libimobiledevice
         run: WORK_DIR=windows/work/usb-build windows/scripts/build-usb.sh windows/work/emulator
+      - name: Build lzfse.dll, ffmpeg.exe and ffprobe.exe
+        run: WORK_DIR=windows/work/media-build windows/scripts/build-media.sh windows/work/emulator
       - uses: actions/upload-artifact@v4
         with:
           name: emulator

@@ -1,6 +1,7 @@
 // What the app keeps, under %LOCALAPPDATA%\LightTouch (LTM_STATE_DIR moves it):
 //
 //   Assets\                   the SecureROMs (bootrom_240_4, bootrom_s5l8900), from Light Touch for Mac
+//   Assets\Guest\tools\       the guest's media helpers (itmedia, itphoto), from its Guest/guest.aar
 //   Devices\<id>\device.json  the record: name, board, version
 //   Devices\<id>\base\        the prepared base (firmwarekit create's output, or the unpacked built-in iPod)
 //   Devices\<id>\data\        the device's own state: the NAND overlay or live NAND, the writable NOR
@@ -204,12 +205,14 @@ internal sealed class DeviceLibrary
         };
     }
 
-    /// Light Touch for Mac's resources (a release zip, or the Light Touch.app folder): the SecureROMs into Assets,
-    /// and the built-in iPod as a new device. Returns the device, or null when the app had none.
-    public DeviceRecord? ImportMacApp(string path, Action<string, double>? progress = null, CancellationToken cancel = default)
+    /// Light Touch for Mac's resources (a release zip, or the Light Touch.app folder): the SecureROMs into Assets, the
+    /// guest's media helpers into Assets\Guest, and the built-in iPod as a new device. Returns the device, or null when
+    /// the app had none or `addBuiltIn` is false.
+    public DeviceRecord? ImportMacApp(string path, Action<string, double>? progress = null, CancellationToken cancel = default,
+        bool addBuiltIn = true)
     {
         using var source = OpenMacResources(path, out var resources);
-        using var device = source.Sub(resources);
+        using var device = source.Sub(resources + "Device");
         var copied = 0;
         foreach (var rom in new[] { "bootrom_240_4", "bootrom_s5l8900" })
         {
@@ -223,33 +226,48 @@ internal sealed class DeviceLibrary
                 break;
             }
         }
-        const string builtIn = "n72ap-7E18.itbase";
-        if (!device.IsFile(builtIn) && !device.Exists($"{builtIn}/index.json"))
+        if (source.IsFile(resources + "Guest/guest.aar"))
+        {
+            progress?.Invoke("Unpacking the guest tools", 0);
+            using var archive = source.Open(resources + "Guest/guest.aar");
+            GuestArchive.Extract(archive, GuestTools, p => p == "tools" || p.StartsWith("tools/", StringComparison.Ordinal));
+        }
+        if (!addBuiltIn) return null;
+        if (!device.IsFile(BuiltIn) && !device.Exists($"{BuiltIn}/index.json"))
         {
             if (copied == 0) throw new InvalidDataException("That Light Touch for Mac has no SecureROMs or built-in iPod.");
             return null;
         }
-        return ImportPacked(device, builtIn, f => progress?.Invoke("Unpacking the built-in iPod", f), cancel);
+        return ImportPacked(device, BuiltIn, f => progress?.Invoke("Unpacking the built-in iPod", f), cancel);
     }
 
-    /// `path`'s Contents/Resources/Device, as a source and the folder in it.
+    /// Light Touch for Mac's built-in iPod touch (2nd generation, iOS 3.1.3).
+    private const string BuiltIn = "n72ap-7E18.itbase";
+    public bool HasBuiltIn => Load().Any(r => r.Board == "n72ap" && r.Build == "7E18");
+
+    /// Where the Mac app's guest.aar is unpacked: tools\itmedia and tools\itphoto.
+    public string GuestTools => Path.Combine(Assets, "Guest");
+
+    /// `path`'s Contents/Resources, as a source and the folder in it ("" or ending in a slash).
     private static IFileSource OpenMacResources(string path, out string resources)
     {
         const string suffix = "Contents/Resources/Device/";
         if (File.Exists(path) && path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
         {
             var zip = new ZipSource(path);
-            resources = zip.Find(suffix) ?? throw new InvalidDataException("That zip doesn't hold Light Touch for Mac.");
+            var device = zip.Find(suffix) ?? throw new InvalidDataException("That zip doesn't hold Light Touch for Mac.");
+            resources = device[..^"Device/".Length];
             return zip;
         }
         if (System.IO.Directory.Exists(path))
         {
-            foreach (var candidate in new[] { Path.Combine(path, "Contents", "Resources", "Device"), path })
+            // The app bundle, its Resources folder, or the Device folder itself.
+            foreach (var candidate in new[] { Path.Combine(path, "Contents", "Resources"), path, Path.Combine(path, "..") })
             {
-                if (System.IO.Directory.Exists(candidate))
+                if (System.IO.Directory.Exists(Path.Combine(candidate, "Device")))
                 {
                     resources = "";
-                    return new FolderSource(candidate);
+                    return new FolderSource(Path.GetFullPath(candidate));
                 }
             }
         }

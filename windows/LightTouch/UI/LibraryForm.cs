@@ -273,8 +273,12 @@ internal sealed class LibraryForm : Form
             Filter = "Light Touch for Mac (*.zip)|*.zip|All files|*.*",
         };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
+        // Importing again (for a newer release's SecureROMs or guest tools) needn't add a second built-in iPod.
+        var addBuiltIn = !library.HasBuiltIn || MessageBox.Show(this,
+            "The library already has the built-in iPod touch. Add another one?\n\nNo updates only the SecureROMs and the guest tools.",
+            "Import from Light Touch for Mac", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
         RunImport("Importing from Light Touch for Mac", (report, cancel) =>
-            library.ImportMacApp(dialog.FileName, (step, fraction) => report(step, fraction), cancel));
+            library.ImportMacApp(dialog.FileName, (step, fraction) => report(step, fraction), cancel, addBuiltIn));
     }
 
     private void ImportBase()
@@ -320,7 +324,7 @@ internal sealed class LibraryForm : Form
         }
         else if (!progress.Cancellation.IsCancellationRequested)
         {
-            MessageBox.Show(this, "Imported the SecureROMs.", title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "Imported the SecureROMs and the guest tools.", title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 

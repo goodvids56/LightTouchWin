@@ -1,5 +1,5 @@
-# The Windows cross-build environment (windows/scripts/build-qemu.sh and build-usb.sh): Fedora's mingw-w64 toolchain
-# and libraries. windows/build.sh builds and runs it; CI runs the same packages in a fedora:42 container.
+# The Windows cross-build environment (windows/scripts/build-qemu.sh, build-usb.sh and build-media.sh): Fedora's
+# mingw-w64 toolchain and libraries. windows/build.sh builds and runs it; CI runs the same packages in a fedora:42 container.
 FROM quay.io/fedora/fedora:42
 RUN dnf install -y \
         mingw64-gcc mingw64-gcc-c++ mingw64-glib2 mingw64-pixman mingw64-zlib mingw64-openssl mingw64-pkg-config \

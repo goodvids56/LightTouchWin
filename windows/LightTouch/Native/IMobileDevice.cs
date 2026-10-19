@@ -108,6 +108,9 @@ internal static unsafe partial class IMobileDevice
     [LibraryImport(Library, EntryPoint = "afc_get_device_info_key", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int AfcDeviceInfoKey(IntPtr client, string key, out IntPtr value);
 
+    [LibraryImport(Library, EntryPoint = "afc_get_file_info", StringMarshalling = StringMarshalling.Utf8)]
+    public static partial int AfcGetFileInfo(IntPtr client, string path, out IntPtr info);
+
     [LibraryImport(Library, EntryPoint = "afc_read_directory", StringMarshalling = StringMarshalling.Utf8)]
     public static partial int AfcReadDirectory(IntPtr client, string path, out IntPtr list);
 

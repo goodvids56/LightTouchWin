@@ -31,6 +31,7 @@ internal sealed class DeviceForm : Form
     private readonly ToolStripDropDownButton appsMenu = new("Apps") { Enabled = false };
     private readonly System.Windows.Forms.Timer usbWatch = new() { Interval = 5000 };
     private readonly SemaphoreSlim installs = new(1, 1);
+    private readonly GuestAgent agent = new();
     private bool usbReady;
     private Thread? qemuThread;
     private PreparedDevice? prepared;
@@ -76,11 +77,13 @@ internal sealed class DeviceForm : Form
         appsMenu.ToolTipText = "Install and remove apps. Available once the device has connected over USB.";
         appsMenu.DropDownItems.Add("Install App…", null, (_, _) => PickApps());
         appsMenu.DropDownItems.Add("Installed Apps…", null, (_, _) => ShowApps());
+        appsMenu.DropDownItems.Add(new ToolStripSeparator());
+        appsMenu.DropDownItems.Add("Import Media…", null, (_, _) => PickMedia());
         toolbar.Items.Add(appsMenu);
         toolbar.Items.Add(power);
         AllowDrop = true;
         DragEnter += (_, e) => e.Effect = DroppedFiles(e).Length > 0 && usbReady ? DragDropEffects.Copy : DragDropEffects.None;
-        DragDrop += async (_, e) => await InstallAll(DroppedFiles(e));
+        DragDrop += async (_, e) => await AddAll(DroppedFiles(e));
         usbWatch.Tick += async (_, _) => await CheckUsb();
 
         // The form is black for the letterbox; the bars keep the system's colors.
@@ -416,7 +419,7 @@ internal sealed class DeviceForm : Form
         {
             usbReady = true;
             appsMenu.Enabled = true;
-            appsMenu.ToolTipText = "Install and remove apps. You can also drop .ipa files on the window.";
+            appsMenu.ToolTipText = "Install and remove apps, and import songs, photos and videos. You can also drop them on the window.";
             SetStatus("Connected over USB");
             return;
         }
@@ -425,8 +428,18 @@ internal sealed class DeviceForm : Form
 
     private static string[] DroppedFiles(DragEventArgs e) =>
         e.Data?.GetData(DataFormats.FileDrop) is string[] files
-            ? files.Where(f => f.EndsWith(".ipa", StringComparison.OrdinalIgnoreCase)).ToArray()
+            ? files.Where(f => f.EndsWith(".ipa", StringComparison.OrdinalIgnoreCase) || MediaPreparation.Kind(f) != null).ToArray()
             : [];
+
+    /// Dropped files in order: apps installed, media imported.
+    private async Task AddAll(IEnumerable<string> files)
+    {
+        foreach (var file in files)
+        {
+            if (file.EndsWith(".ipa", StringComparison.OrdinalIgnoreCase)) await InstallOne(file);
+            else await ImportMedia(file);
+        }
+    }
 
     private void PickApps()
     {
@@ -472,6 +485,55 @@ internal sealed class DeviceForm : Form
         }
         finally
         {
+            installs.Release();
+        }
+    }
+
+    // MARK: - Media
+
+    private void PickMedia()
+    {
+        using var dialog = new OpenFileDialog { Title = "Import Media", Filter = MediaPreparation.DialogFilter, Multiselect = true };
+        if (dialog.ShowDialog(this) == DialogResult.OK) _ = AddAll(dialog.FileNames);
+    }
+
+    /// One song, photo or video, after anything already being added: prepared on this PC, staged over AFC, then
+    /// committed into its library by the guest's helper. The status bar follows it and a failure says why.
+    private async Task ImportMedia(string file)
+    {
+        var name = Path.GetFileNameWithoutExtension(file);
+        if (MediaPreparation.Kind(file) is not { } kind) return;
+        if (MediaImport.Refusal(record, kind) is { } refusal)
+        {
+            MessageBox.Show(this, refusal, "Import Media", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        await installs.WaitAsync();
+        PreparedMedia? media = null;
+        try
+        {
+            SetStatus($"Preparing {name}…");
+            media = await MediaPreparation.Prepare(file, record.BoardFacts);
+            if (!GuestAgent.IsAlive)
+            {
+                throw new MediaException($"The {record.BoardFacts?.ShortName ?? "device"} isn't ready yet. Try again when it has finished starting.");
+            }
+            var import = new MediaImport(services, agent, library.GuestTools);
+            var title = media.Title;
+            await import.Stage(media, f => BeginInvoke(() => SetStatus($"Copying {title}: {(int)(f * 100)}%")));
+            SetStatus($"Adding {title} to {media.Destination}…");
+            await import.Commit(media);
+            SetStatus($"Added {title} to {media.Destination}.");
+        }
+        catch (Exception error) when (error is MediaException or DeviceServiceException or GuestAgentException or IOException
+            or UnauthorizedAccessException)
+        {
+            SetStatus($"{name} wasn't added.");
+            MessageBox.Show(this, $"{name} wasn't added: {error.Message}", "Import Media", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            media?.Delete();
             installs.Release();
         }
     }
@@ -549,6 +611,7 @@ internal sealed class DeviceForm : Form
     {
         base.OnFormClosed(e);
         usbMux?.Dispose();
+        agent.Dispose();
         File.Delete(record.UsbMuxAddress);
         lease?.Dispose();
     }

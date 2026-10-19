@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- The app's platform-neutral logic (boot recipes, packed devices, identities), compiled from its sources for
+  <!-- The app's platform-neutral logic (boot recipes, packed devices, identities, the guest archive, media formats), compiled from its sources for
        net8.0, so `dotnet test` runs on any OS; the WinForms windows stay in LightTouch.csproj. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -14,6 +14,8 @@
     <Compile Include="../LightTouch/Library/*.cs" LinkBase="App/Library" />
     <Compile Include="../LightTouch/Native/Qemu.cs" LinkBase="App/Native" />
     <Compile Include="../LightTouch/Native/Plist.cs" LinkBase="App/Native" />
+    <Compile Include="../LightTouch/Native/Lzfse.cs" LinkBase="App/Native" />
+    <Compile Include="../LightTouch/Services/MediaFormats.cs" LinkBase="App/Services" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />

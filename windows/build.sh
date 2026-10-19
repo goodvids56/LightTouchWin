@@ -1,8 +1,7 @@
 #!/bin/bash
-# Builds Light Touch for Windows (x64) from Linux: the emulator and the USB services cross-compiled with mingw-w64
-# (scripts/build-qemu.sh and build-usb.sh,
-# in the windows/Dockerfile image unless this already runs on Fedora with its mingw64 packages), the app published
-# with the .NET 8 SDK, and both put together as dist/LightTouch-windows-x64.zip.
+# Builds Light Touch for Windows (x64) from Linux: the emulator, the USB services and the media tools cross-compiled with
+# mingw-w64 (scripts/build-qemu.sh, build-usb.sh and build-media.sh, in the windows/Dockerfile image unless this already
+# runs on Fedora with its mingw64 packages), the app published with the .NET 8 SDK, and both put together as dist/LightTouch-windows-x64.zip.
 #
 #     windows/build.sh                 # everything
 #     windows/build.sh --emulator      # only the emulator, into work/emulator
@@ -31,12 +30,14 @@ if [ $emulator = 1 ]; then
     if command -v x86_64-w64-mingw32-gcc >/dev/null && [ -d /usr/x86_64-w64-mingw32/sys-root/mingw ]; then
         WORK_DIR="$WORK/emulator-build" "$SRC/windows/scripts/build-qemu.sh" "$WORK/emulator"
         WORK_DIR="$WORK/usb-build" "$SRC/windows/scripts/build-usb.sh" "$WORK/emulator"
+        WORK_DIR="$WORK/media-build" "$SRC/windows/scripts/build-media.sh" "$WORK/emulator"
     else
         docker build -t lighttouch-windows-build "$HERE"
         docker run --rm --network host -u "$(id -u):$(id -g)" -e HOME=/tmp -e JOBS \
             -v "$SRC:/src" -w /src lighttouch-windows-build \
             bash -c 'WORK_DIR=/src/windows/work/emulator-build windows/scripts/build-qemu.sh /src/windows/work/emulator &&
-                WORK_DIR=/src/windows/work/usb-build windows/scripts/build-usb.sh /src/windows/work/emulator'
+                WORK_DIR=/src/windows/work/usb-build windows/scripts/build-usb.sh /src/windows/work/emulator &&
+                WORK_DIR=/src/windows/work/media-build windows/scripts/build-media.sh /src/windows/work/emulator'
     fi
 fi
 
