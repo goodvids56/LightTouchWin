@@ -361,7 +361,7 @@ internal static partial class MediaPreparation
     }
 
     /// ffmpeg.exe and ffprobe.exe beside the app (LTW_MEDIA_TOOLS overrides, for tests).
-    private static string Tool(string name)
+    internal static string Tool(string name)
     {
         var directory = Environment.GetEnvironmentVariable("LTW_MEDIA_TOOLS") ?? AppContext.BaseDirectory;
         foreach (var candidate in new[] { name + ".exe", name })

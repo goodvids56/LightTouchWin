@@ -176,6 +176,22 @@ internal static unsafe partial class Qemu
     [LibraryImport(Library, EntryPoint = "qemu_ios_agent_status")]
     public static partial int AgentStatus();
 
+    // MARK: - Audio capture: the guest mixer's 44100 Hz stereo S16LE packets, by generation (one per recording)
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_audio_capture_start")]
+    public static partial ulong AudioCaptureStart();
+
+    /// Bytes read into `buffer` (at least 16384), 0 when nothing is queued, -1 when the generation failed or expired;
+    /// `seconds` is the packet's capture time (with an empty read, silence through it when ≥ 0).
+    [LibraryImport(Library, EntryPoint = "qemu_ios_audio_capture_read")]
+    public static partial int AudioCaptureRead(ulong generation, byte* buffer, int capacity, out double seconds);
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_audio_capture_time")]
+    public static partial double AudioCaptureTime(ulong generation);
+
+    [LibraryImport(Library, EntryPoint = "qemu_ios_audio_capture_stop")]
+    public static partial void AudioCaptureStop(ulong generation);
+
     [LibraryImport("msvcrt.dll", EntryPoint = "_set_fmode")]
     private static partial int SetFileMode(int mode);
 

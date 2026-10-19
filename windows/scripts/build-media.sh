@@ -6,7 +6,7 @@
 #   ffmpeg.exe   FFmpeg, from the same release build-support/dependencies.json pins for the emulator, cut down to what
 #   ffprobe.exe  preparing songs and videos takes: reading tags, durations and cover art, remuxing ADTS AAC into M4A,
 #                and converting videos to the iPod's H.264/AAC M4V with Windows' own H.264 encoder (Media Foundation,
-#                h264_mf), where the Mac converts with AVFoundation's device presets.
+#                h264_mf), where the Mac converts with AVFoundation's device presets; and encoding screen recordings.
 #
 #     windows/scripts/build-media.sh OUT_DIR
 #
@@ -59,6 +59,8 @@ CONFIGURE=(
     # What MediaSong, MediaVideo and MediaPhoto accept: MP3, M4A, AAC, WAV; MP4, M4V, MOV; HEIC (the rest of the photos
     # System.Drawing reads itself).
     --enable-demuxer=mov,mp3,aac,wav,image2
+    # Screen recording: the device window's frames (BGRA) and the mixer's PCM, piped in.
+    --enable-demuxer=rawvideo,pcm_s16le --enable-decoder=rawvideo
     --enable-decoder=h264,hevc,mpeg4,h263,mjpeg,aac,aac_latm,mp3float,mp3,alac
     --enable-decoder=pcm_s16le,pcm_s16be,pcm_s24le,pcm_s24be,pcm_s32le,pcm_f32le,pcm_f64le,pcm_u8
     --enable-parser=h264,hevc,mpeg4video,aac,mpegaudio,mjpeg

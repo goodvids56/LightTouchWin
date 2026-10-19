@@ -33,6 +33,9 @@ internal sealed class DeviceForm : Form
     private readonly System.Windows.Forms.Timer usbWatch = new() { Interval = 5000 };
     private readonly SemaphoreSlim installs = new(1, 1);
     private readonly GuestAgent agent = new();
+    private ScreenRecorder? recorder;
+    private readonly ToolStripButton recordButton = new("Record") { ToolTipText = "Record the screen and sound (Ctrl+R)" };
+    private readonly System.Windows.Forms.Timer recordClock = new() { Interval = 500 };
     private WebProxy? webProxy;
     private WebProxySettings proxySettings = new();
     private bool proxyApplied, proxyApplying;
@@ -71,6 +74,13 @@ internal sealed class DeviceForm : Form
         toolbar.Items.Add(new ToolStripSeparator());
         AddButton("Paste", "Paste the clipboard's text into the device (Ctrl+V)", PasteClipboard);
         AddButton("Screenshot", "Save a screenshot (Ctrl+S)", SaveScreenshot);
+        recordButton.DisplayStyle = ToolStripItemDisplayStyle.Text;
+        recordButton.Click += async (_, _) => await ToggleRecording();
+        toolbar.Items.Add(recordButton);
+        recordClock.Tick += (_, _) =>
+        {
+            if (recorder != null) recordButton.Text = $"■ Stop {TimeSpan.FromSeconds(recorder.Seconds):m\\:ss}";
+        };
         internet.ToolTipText = "This boot runs Setup offline. Open the network once Setup is done.";
         internet.Click += (_, _) => OpenNetwork();
         internet.Visible = false;
@@ -274,9 +284,11 @@ internal sealed class DeviceForm : Form
         if (!Qemu.Frame(out var pixels, out var width, out var height, ref serial) || pixels == IntPtr.Zero
             || width <= 0 || height <= 0)
         {
+            recorder?.Frame(screen.Current);
             return;
         }
         screen.ShowFrame(pixels, width, height);
+        recorder?.Frame(screen.Current);
         if (width != lastWidth || height != lastHeight)
         {
             if (lastWidth == 0) SetStatus("Running");
@@ -378,6 +390,7 @@ internal sealed class DeviceForm : Form
             case Keys.Control | Keys.Shift | Keys.Z: Qemu.Shake(); return true;
             case Keys.Control | Keys.V: PasteClipboard(); return true;
             case Keys.Control | Keys.S: SaveScreenshot(); return true;
+            case Keys.Control | Keys.R: _ = ToggleRecording(); return true;
         }
         // Arrows, Tab and Return would otherwise move focus between the toolbar's buttons.
         if ((keyData & (Keys.Control | Keys.Alt)) == 0 && MacKeys.Code(keyData) >= 0)
@@ -676,6 +689,59 @@ internal sealed class DeviceForm : Form
         }
     }
 
+    // MARK: - Recording
+
+    private bool finishingRecording;
+
+    /// Starts a recording of the screen and sound, or ends it and saves the movie under Videos\Light Touch.
+    private async Task ToggleRecording()
+    {
+        if (finishingRecording) return;
+        if (recorder == null)
+        {
+            if (!started || screen.Current is not { } frame) return;
+            try
+            {
+                recorder = new ScreenRecorder(frame.Width, frame.Height, withAudio: true);
+            }
+            catch (Exception error) when (error is MediaException or IOException or System.ComponentModel.Win32Exception)
+            {
+                MessageBox.Show(this, $"The recording didn't start: {error.Message}", "Record", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            recordButton.Text = "■ Stop 0:00";
+            recordButton.ToolTipText = "Stop recording and save the movie (Ctrl+R)";
+            recordClock.Start();
+            SetStatus("Recording…");
+            return;
+        }
+        finishingRecording = true;
+        recordClock.Stop();
+        recordButton.Text = "Saving…";
+        var take = recorder;
+        try
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "Light Touch");
+            var name = string.Concat(record.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
+            var path = Path.Combine(folder, $"{name} {DateTime.Now:yyyy-MM-dd HH.mm.ss}{take.Extension}");
+            var saved = await take.Finish(path);
+            SetStatus($"Saved {saved}");
+        }
+        catch (Exception error) when (error is MediaException or IOException or UnauthorizedAccessException)
+        {
+            SetStatus("The recording couldn't be saved.");
+            MessageBox.Show(this, $"The recording couldn't be saved: {error.Message}", "Record", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            take.Dispose();
+            recorder = null;
+            finishingRecording = false;
+            recordButton.Text = "Record";
+            recordButton.ToolTipText = "Record the screen and sound (Ctrl+R)";
+        }
+    }
+
     private void SaveScreenshot()
     {
         using var image = screen.Snapshot();
@@ -753,6 +819,7 @@ internal sealed class DeviceForm : Form
         usbMux?.Dispose();
         agent.Dispose();
         webProxy?.Dispose();
+        recorder?.Dispose();
         File.Delete(record.UsbMuxAddress);
         lease?.Dispose();
     }
@@ -813,6 +880,9 @@ internal sealed class ScreenView : Control
     }
 
     public Bitmap? Snapshot() => frame == null ? null : new Bitmap(frame);
+
+    /// The frame shown now (the view's own; don't keep it).
+    public Bitmap? Current => frame;
 
     /// Every key is the guest's while the screen has focus: arrows, Tab and Return never move it.
     protected override bool IsInputKey(Keys keyData) => true;
