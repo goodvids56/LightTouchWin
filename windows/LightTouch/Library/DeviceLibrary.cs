@@ -1,7 +1,8 @@
 // What the app keeps, under %LOCALAPPDATA%\LightTouch (LTM_STATE_DIR moves it):
 //
 //   Assets\                   the SecureROMs (bootrom_240_4, bootrom_s5l8900), from Light Touch for Mac
-//   Assets\Guest\tools\       the guest's media helpers (itmedia, itphoto), from its Guest/guest.aar
+//   Assets\Guest\             from its Guest/guest.aar: tools\ (the media helpers itmedia, itphoto) and
+//                             guest-tools\*.itpack (the guest packages, which hold the web proxy's itproxy and ittrust)
 //   Devices\<id>\device.json  the record: name, board, version
 //   Devices\<id>\base\        the prepared base (firmwarekit create's output, or the unpacked built-in iPod)
 //   Devices\<id>\data\        the device's own state: the NAND overlay or live NAND, the writable NOR
@@ -230,7 +231,10 @@ internal sealed class DeviceLibrary
         {
             progress?.Invoke("Unpacking the guest tools", 0);
             using var archive = source.Open(resources + "Guest/guest.aar");
-            GuestArchive.Extract(archive, GuestTools, p => p == "tools" || p.StartsWith("tools/", StringComparison.Ordinal));
+            // The media helpers, and the guest packages the web proxy's itproxy and ittrust come out of.
+            GuestArchive.Extract(archive, GuestTools, p => p is "tools" or "guest-tools"
+                || p.StartsWith("tools/", StringComparison.Ordinal)
+                || (p.StartsWith("guest-tools/", StringComparison.Ordinal) && p.EndsWith(".itpack", StringComparison.Ordinal)));
         }
         if (!addBuiltIn) return null;
         if (!device.IsFile(BuiltIn) && !device.Exists($"{BuiltIn}/index.json"))
@@ -245,7 +249,7 @@ internal sealed class DeviceLibrary
     private const string BuiltIn = "n72ap-7E18.itbase";
     public bool HasBuiltIn => Load().Any(r => r.Board == "n72ap" && r.Build == "7E18");
 
-    /// Where the Mac app's guest.aar is unpacked: tools\itmedia and tools\itphoto.
+    /// Where the Mac app's guest.aar is unpacked: tools\itmedia, tools\itphoto and guest-tools\*.itpack.
     public string GuestTools => Path.Combine(Assets, "Guest");
 
     /// `path`'s Contents/Resources, as a source and the folder in it ("" or ending in a slash).

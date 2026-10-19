@@ -1,0 +1,23 @@
+diff --git a/net/slirp.c b/net/slirp.c
+index 45edf23..63d96b0 100644
+--- a/net/slirp.c
++++ b/net/slirp.c
+@@ -1368,7 +1368,17 @@ static int slirp_guestfwd(SlirpState *s, const char *config_str, Error **errp)
+ 
+     snprintf(buf, sizeof(buf), "guestfwd.tcp.%d", port);
+ 
+-    if (g_str_has_prefix(p, "cmd:")) {
++    if (g_str_has_prefix(p, "unix:")) {
++        /*
++         * One connection to the socket per guest connection (libslirp's
++         * slirp_add_unix); on Windows the "socket" is a loopback HOST:PORT.
++         */
++        if (slirp_add_unix(s->slirp, &p[5], &server, port) < 0) {
++            error_setg(errp, "Conflicting/invalid host:port in guest "
++                       "forwarding rule '%s'", config_str);
++            return -1;
++        }
++    } else if (g_str_has_prefix(p, "cmd:")) {
+         if (slirp_add_exec(s->slirp, &p[4], &server, port) < 0) {
+             error_setg(errp, "Conflicting/invalid host:port in guest "
+                        "forwarding rule '%s'", config_str);

@@ -2,13 +2,14 @@
 # Cross-builds the USB half of Light Touch for Windows x64 with mingw-w64: libimobiledevice and its libraries at the
 # versions build-support/dependencies.json pins (the Mac build's), with the Mac's patch for iPhone OS 1's SSLv3 lockdown
 # over an OpenSSL built enable-ssl3, and the usbmuxd fork build-support/sources.json pins (its QEMU backend carries the
-# emulated USB device to libimobiledevice) with windows/patches/usbmuxd/.
+# emulated USB device to libimobiledevice) with windows/patches/usbmuxd/. guesttls.dll, the web proxy's TLS toward the
+# guest, links the same OpenSSL.
 #
 #     windows/scripts/build-usb.sh OUT_DIR
 #
 # Runs where build-qemu.sh does (Fedora with its mingw64 packages, plus mingw64-curl, mingw64-libusb1 and autotools).
 # WORK_DIR (default OUT_DIR/../work) keeps the downloads and build trees. OUT_DIR gets usbmuxd.exe, the libraries' DLLs
-# (libimobiledevice-1.0.dll and libplist-2.0.dll are what the app calls) and licenses/.
+# (libimobiledevice-1.0.dll and libplist-2.0.dll are what the app calls), guesttls.dll and licenses/.
 set -euo pipefail
 
 OUT="$(mkdir -p "$1" && cd "$1" && pwd)"
@@ -130,6 +131,12 @@ LIBS_PC="libplist-2.0 libimobiledevice-glue-1.0 libimobiledevice-1.0"
     "$MUX/src/utils.c" "$MUX/src/conf.c" "$SRC/windows/usbmuxd/main-win32.c" \
     -o "$MUX_BUILD/usbmuxd.exe" $("$HOST-pkg-config" --libs $LIBS_PC) -lws2_32 -lshell32 -lole32 -lpthread
 
+# MARK: - guesttls.dll: the web proxy's TLS 1.0 toward the guest (windows/guesttls/guesttls.c) on the same OpenSSL
+
+"$HOST-gcc" -O2 -shared -o "$OUT/guesttls.dll" "$SRC/windows/guesttls/guesttls.c" -I"$STATIC/include" \
+    "$OPENSSL_LIB/libssl.a" "$OPENSSL_LIB/libcrypto.a" -lws2_32 -lgdi32 -lcrypt32 -luser32 -ladvapi32 -static-libgcc
+"$HOST-strip" "$OUT/guesttls.dll"
+
 # MARK: - Stage
 
 cp "$MUX_BUILD/usbmuxd.exe" "$SYSROOT/bin/libimobiledevice-1.0.dll" "$SYSROOT/bin/libplist-2.0.dll" "$OUT/"
@@ -165,4 +172,4 @@ cp "$MUX"/COPYING* "$OUT/licenses/usbmuxd/" 2>/dev/null || true
 cp "$SRC"/windows/patches/usbmuxd/*.patch "$SRC/windows/usbmuxd/main-win32.c" "$OUT/licenses/usbmuxd/"
 echo "usbmuxd: $(pin repository) at $(pin commit), with the patches and main-win32.c beside this file" \
     > "$OUT/licenses/usbmuxd/SOURCE.txt"
-echo "built $OUT/usbmuxd.exe"
+echo "built $OUT/usbmuxd.exe and guesttls.dll"

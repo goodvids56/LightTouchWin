@@ -15,8 +15,8 @@ internal static class BootRecipe
 
     /// The wifi0 user netdev: restrict=on while Setup runs offline; lan=off keeps the guest off the PC's local
     /// networks (DNS and the internet still work).
-    public static string WifiNetdev(bool restricted, bool localNetwork) =>
-        "user,id=wifi0" + (restricted ? ",restrict=on" : "") + (localNetwork ? "" : ",lan=off");
+    public static string WifiNetdev(bool restricted, bool localNetwork, string guestForward = "") =>
+        "user,id=wifi0" + guestForward + (restricted ? ",restrict=on" : "") + (localNetwork ? "" : ",lan=off");
 
     /// 5.x Setup phones home: with live internet its Apple-ID page ignores "Skip This Step" for minutes, so a boot
     /// that ends in Setup runs it offline until the person opens the network.
@@ -99,5 +99,6 @@ internal static class BootRecipe
 }
 
 /// What the person chose for this boot, and the boot's USB bridge (usbmuxd's address for usb-tcp-addr), if any.
+/// `GuestForward`: the web proxy's guestfwd (WebProxy.GuestForward), on the Wi-Fi (and cellular) netdev.
 internal sealed record BootOptions(bool Network, bool LocalNetwork, bool Audio, bool VerboseBoot, int RefreshHz = 60,
-    string? UsbAddress = null);
+    string? UsbAddress = null, string GuestForward = "");

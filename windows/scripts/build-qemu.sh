@@ -86,9 +86,14 @@ if [ ! -f "$PREFIX/lib/pkgconfig/libavcodec.pc" ]; then
     )
 fi
 
-# MARK: - libslirp, with qemu-ios's restrict and local-network patch (static, as on the Mac)
+# MARK: - libslirp, with qemu-ios's restrict and local-network patch (static, as on the Mac) and windows/patches/libslirp/
+# (the guestfwd to a loopback port the web proxy takes on Windows); rebuilt when either changes
 
-if [ ! -f "$PREFIX/lib/pkgconfig/slirp.pc" ]; then
+shopt -s nullglob
+SLIRP_PATCHES=("$QEMU/subprojects/packagefiles/libslirp-set-restricted.patch" "$SRC"/windows/patches/libslirp/*.patch)
+shopt -u nullglob
+SLIRP_STAMP="$SLIRP_VERSION $(cat "${SLIRP_PATCHES[@]}" | sha256sum | cut -c1-64)"
+if [ ! -f "$PREFIX/lib/pkgconfig/slirp.pc" ] || [ "$(cat "$PREFIX/lib/ltw-slirp-stamp" 2>/dev/null || true)" != "$SLIRP_STAMP" ]; then
     SLIRP_TARBALL="${SLIRP_TARBALL:-$WORK/libslirp-v$SLIRP_VERSION.tar.gz}"
     if [ ! -f "$SLIRP_TARBALL" ]; then
         curl -sSfL -o "$SLIRP_TARBALL.part" \
@@ -98,10 +103,11 @@ if [ ! -f "$PREFIX/lib/pkgconfig/slirp.pc" ]; then
     echo "$SLIRP_SHA256  $SLIRP_TARBALL" | sha256sum -c --quiet
     rm -rf "$WORK/libslirp-v$SLIRP_VERSION" "$WORK/slirp-build"
     tar -xf "$SLIRP_TARBALL" -C "$WORK"
-    (cd "$WORK/libslirp-v$SLIRP_VERSION" && patch -p1 < "$QEMU/subprojects/packagefiles/libslirp-set-restricted.patch")
+    for p in "${SLIRP_PATCHES[@]}"; do (cd "$WORK/libslirp-v$SLIRP_VERSION" && patch -p1 < "$p"); done
     meson setup "$WORK/slirp-build" "$WORK/libslirp-v$SLIRP_VERSION" --cross-file /usr/share/mingw/toolchain-mingw64.meson \
         --prefix="$PREFIX" --libdir=lib --buildtype=release -Ddefault_library=static --wrap-mode=nofallback
     ninja -C "$WORK/slirp-build" -j"$JOBS" install
+    echo "$SLIRP_STAMP" > "$PREFIX/lib/ltw-slirp-stamp"
 fi
 
 # MARK: - QEMU
@@ -215,6 +221,8 @@ mkdir -p "$OUT/licenses/qemu-ios" "$OUT/licenses/ffmpeg"
 cp "$QEMU/COPYING" "$QEMU/LICENSE" "$OUT/licenses/qemu-ios/"
 cp "$WORK/ffmpeg-$FFMPEG_VERSION/COPYING.LGPLv2.1" "$OUT/licenses/ffmpeg/" 2>/dev/null || true
 cp ${PATCHES[@]+"${PATCHES[@]}"} "$OUT/licenses/qemu-ios/"
+mkdir -p "$OUT/licenses/libslirp"
+cp "$WORK/libslirp-v$SLIRP_VERSION/COPYRIGHT" "${SLIRP_PATCHES[@]}" "$OUT/licenses/libslirp/" 2>/dev/null || true
 {
     echo "qemu-ios: $QEMU_REPO at $QEMU_COMMIT, with the patches beside this file."
     echo "FFmpeg $FFMPEG_VERSION: https://ffmpeg.org/releases/ffmpeg-$FFMPEG_VERSION.tar.xz (sha256 $FFMPEG_SHA256),"

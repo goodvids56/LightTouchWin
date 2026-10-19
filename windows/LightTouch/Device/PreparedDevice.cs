@@ -173,7 +173,7 @@ internal sealed class PreparedDevice
     public BootConfig Configuration(Native.Qemu.DeviceInfo hardware, BootOptions o, string serialLog)
     {
         var restricted = o.Network && ExpectsSetup;
-        var netdev = o.Network ? BootRecipe.WifiNetdev(restricted, o.LocalNetwork) : null;
+        var netdev = o.Network ? BootRecipe.WifiNetdev(restricted, o.LocalNetwork, o.GuestForward) : null;
         List<string> argv;
         var environment = new Dictionary<string, string>();
         switch (Board.SoC)

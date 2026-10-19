@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using LightTouch.Device;
 using LightTouch.Library;
 using LightTouch.Native;
+using LightTouch.Proxy;
 using LightTouch.Services;
 
 namespace LightTouch.UI;
@@ -32,6 +33,10 @@ internal sealed class DeviceForm : Form
     private readonly System.Windows.Forms.Timer usbWatch = new() { Interval = 5000 };
     private readonly SemaphoreSlim installs = new(1, 1);
     private readonly GuestAgent agent = new();
+    private WebProxy? webProxy;
+    private WebProxySettings proxySettings = new();
+    private bool proxyApplied, proxyApplying;
+    private readonly ToolStripDropDownButton proxyMenu = new("Web") { Visible = false };
     private bool usbReady;
     private Thread? qemuThread;
     private PreparedDevice? prepared;
@@ -80,6 +85,12 @@ internal sealed class DeviceForm : Form
         appsMenu.DropDownItems.Add(new ToolStripSeparator());
         appsMenu.DropDownItems.Add("Import Media…", null, (_, _) => PickMedia());
         toolbar.Items.Add(appsMenu);
+        proxyMenu.ToolTipText = "How the device reaches the web: through Light Touch's proxy, which speaks the old TLS it "
+            + "knows, to the live web or to the Wayback Machine at a date.";
+        proxyMenu.DropDownItems.Add("Live Web", null, (_, _) => SetProxyMode("direct"));
+        proxyMenu.DropDownItems.Add("Dated Web (Wayback Machine)…", null, (_, _) => SetProxyMode("archive"));
+        proxyMenu.DropDownItems.Add("Off (no proxy)", null, (_, _) => SetProxyMode("off"));
+        toolbar.Items.Add(proxyMenu);
         toolbar.Items.Add(power);
         AllowDrop = true;
         DragEnter += (_, e) => e.Effect = DroppedFiles(e).Length > 0 && usbReady ? DragDropEffects.Copy : DragDropEffects.None;
@@ -174,11 +185,14 @@ internal sealed class DeviceForm : Form
         // The USB bridge listens before the guest's USB core comes up and dials it.
         usbMux = UsbMux.Start(Path.Combine(record.Data, "usbmuxd"), Path.Combine(record.Logs, "usbmuxd.log"));
         if (usbMux != null) File.WriteAllText(record.UsbMuxAddress, usbMux.ClientAddress);
+        // The web proxy listens before the guest's first request (WebProxy.GuestForward on the netdev).
+        if (record.Network) StartWebProxy();
         var options = new BootOptions(record.Network, settings.LocalNetwork, audio, settings.VerboseBoot,
-            UsbAddress: usbMux?.GuestAddress);
+            UsbAddress: usbMux?.GuestAddress, GuestForward: webProxy?.GuestForward ?? "");
         var config = device.Configuration(hardware, options, Path.Combine(record.Logs, "serial.log"));
         restricted = record.Network && device.ExpectsSetup;
         internet.Visible = restricted;
+        if (webProxy != null) webProxy.Offline = restricted;
         Qemu.UseBinaryFiles();
         foreach (var (key, value) in config.Environment) Qemu.SetEnvironment(key, value);
         Console.Error.WriteLine($"LightTouch: qemu-arm.dll API {Qemu.ApiVersionText()}, booting {config.Machine}: "
@@ -421,6 +435,7 @@ internal sealed class DeviceForm : Form
             appsMenu.Enabled = true;
             appsMenu.ToolTipText = "Install and remove apps, and import songs, photos and videos. You can also drop them on the window.";
             SetStatus("Connected over USB");
+            _ = ApplyWebProxy();
             return;
         }
         if (!halting) usbWatch.Start();
@@ -486,6 +501,105 @@ internal sealed class DeviceForm : Form
         finally
         {
             installs.Release();
+        }
+    }
+
+    // MARK: - Web proxy
+
+    private void StartWebProxy()
+    {
+        proxySettings = WebProxySettings.Load(record);
+        try
+        {
+            proxySettings.Save(record);
+            webProxy = new WebProxy(WebProxySettings.Config(record)) { LocalNetwork = settings.LocalNetwork };
+            webProxy.Start();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException
+            or System.Net.Sockets.SocketException)
+        {
+            Console.Error.WriteLine($"LightTouch: the web proxy didn't start: {error.Message}");
+            webProxy = null;
+            return;
+        }
+        proxyMenu.Visible = true;
+        UpdateProxyMenu();
+    }
+
+    private void UpdateProxyMenu()
+    {
+        var items = proxyMenu.DropDownItems.OfType<ToolStripMenuItem>().ToList();
+        items[0].Checked = proxySettings.Mode == "direct";
+        items[1].Checked = proxySettings.Mode == "archive";
+        items[1].Text = proxySettings.Mode == "archive" && DateTime.TryParseExact(proxySettings.ArchiveDate, "yyyyMMdd",
+            System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date)
+            ? $"Dated Web (Wayback Machine, {date:d MMM yyyy})…"
+            : "Dated Web (Wayback Machine)…";
+        items[2].Checked = proxySettings.Mode == "off";
+    }
+
+    /// The routing takes effect with the next connection; turning the proxy on also sets the guest up for it.
+    private void SetProxyMode(string mode)
+    {
+        if (webProxy == null) return;
+        var archiveDate = proxySettings.ArchiveDate;
+        if (mode == "archive")
+        {
+            var shown = DateTime.TryParseExact(archiveDate, "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var current) ? current.ToString("yyyy-MM-dd") : "2009-09-09";
+            var answer = Prompt.Show(this, "Dated Web", "Browse the web as the Wayback Machine has it on (YYYY-MM-DD):", shown);
+            if (answer == null) return;
+            if (!DateTime.TryParseExact(answer.Trim(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var picked) || picked.Year < 1996 || picked > DateTime.Today)
+            {
+                MessageBox.Show(this, "Enter a date from 1996 to today, as YYYY-MM-DD.", "Dated Web", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            archiveDate = picked.ToString("yyyyMMdd");
+        }
+        proxySettings = new WebProxySettings { Mode = mode, ArchiveDate = archiveDate };
+        try
+        {
+            proxySettings.Save(record);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            MessageBox.Show(this, error.Message, "Web", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        UpdateProxyMenu();
+        SetStatus(mode switch
+        {
+            "direct" => "The device reaches the live web through the proxy.",
+            "archive" => "The device browses the Wayback Machine's web.",
+            _ => "The proxy passes the device's connections straight through.",
+        });
+        _ = ApplyWebProxy();
+    }
+
+    /// Once a boot, when the proxy is on and the guest's agent answers: the route to the proxy and the CA's trust
+    /// (WebProxySetup), so HTTPS through it works without a prompt.
+    private async Task ApplyWebProxy()
+    {
+        if (webProxy == null || proxyApplied || proxyApplying || restricted || !usbReady || proxySettings.Mode == "off") return;
+        proxyApplying = true;
+        try
+        {
+            for (var i = 0; i < 60 && !GuestAgent.IsAlive; i++) await Task.Delay(1000);
+            if (!GuestAgent.IsAlive || halting) return;
+            await new WebProxySetup(agent, WebProxySettings.Config(record), library.GuestTools).Configure();
+            proxyApplied = true;
+            Console.Error.WriteLine("LightTouch: proxy: certificate trusted through the guest agent");
+        }
+        catch (Exception error) when (error is DeviceServiceException or GuestAgentException or IOException
+            or System.Security.Cryptography.CryptographicException or InvalidDataException)
+        {
+            Console.Error.WriteLine($"LightTouch: proxy: setup failed: {error.Message}");
+            SetStatus("The web proxy couldn't be set up on the device; secure sites may not load.");
+        }
+        finally
+        {
+            proxyApplying = false;
         }
     }
 
@@ -557,7 +671,9 @@ internal sealed class DeviceForm : Form
         if (prepared != null) File.WriteAllText(prepared.SetupDoneMark, "");
         restricted = false;
         internet.Visible = false;
+        if (webProxy != null) webProxy.Offline = false;
         SetStatus("Internet open.");
+        _ = ApplyWebProxy();
     }
 
     // MARK: - Stopping
@@ -612,6 +728,7 @@ internal sealed class DeviceForm : Form
         base.OnFormClosed(e);
         usbMux?.Dispose();
         agent.Dispose();
+        webProxy?.Dispose();
         File.Delete(record.UsbMuxAddress);
         lease?.Dispose();
     }
