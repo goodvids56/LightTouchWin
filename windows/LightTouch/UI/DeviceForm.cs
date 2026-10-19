@@ -65,8 +65,8 @@ internal sealed class DeviceForm : Form
         AddButton("Vol −", "Volume down", () => Press(Qemu.ButtonVolumeDown));
         AddButton("Vol +", "Volume up", () => Press(Qemu.ButtonVolumeUp));
         toolbar.Items.Add(new ToolStripSeparator());
-        AddButton("↺", "Rotate left (Ctrl+Left)", () => Qemu.Rotate(clockwise: false));
-        AddButton("↻", "Rotate right (Ctrl+Right)", () => Qemu.Rotate(clockwise: true));
+        AddButton("↺", "Rotate left (Ctrl+Left)", () => Rotate(clockwise: false));
+        AddButton("↻", "Rotate right (Ctrl+Right)", () => Rotate(clockwise: true));
         AddButton("Shake", "Shake (Ctrl+Shift+Z)", Qemu.Shake);
         toolbar.Items.Add(new ToolStripSeparator());
         AddButton("Paste", "Paste the clipboard's text into the device (Ctrl+V)", PasteClipboard);
@@ -105,6 +105,8 @@ internal sealed class DeviceForm : Form
         Controls.Add(toolbar);
         Controls.Add(statusBar);
 
+        if (settings.Bezel && record.BoardFacts is { } facts) screen.SetShell(facts.Art, ShellImage(facts.Art));
+        screen.HomeButton += (_, down) => { if (started) Qemu.Button(Qemu.ButtonHome, down); };
         screen.MouseDown += OnScreenMouseDown;
         screen.MouseMove += OnScreenMouseMove;
         screen.MouseUp += OnScreenMouseUp;
@@ -284,10 +286,32 @@ internal sealed class DeviceForm : Form
         }
     }
 
-    /// Sizes the window to the frame at the chosen scale, keeping it on screen.
-    private void FitWindow(int width, int height)
+    private void Rotate(bool clockwise)
+    {
+        Qemu.Rotate(clockwise);
+        screen.Rotation += clockwise ? 90 : -90;
+    }
+
+    /// The art's image from the app's resources (LightTouch.csproj embeds the Mac app's shell images), or null.
+    private static Image? ShellImage(BoardArt art)
+    {
+        using var stream = typeof(DeviceForm).Assembly.GetManifestResourceStream($"shell/{art.Image}.png");
+        return stream == null ? null : Image.FromStream(new MemoryStream(ReadAll(stream)));
+    }
+
+    private static byte[] ReadAll(Stream stream)
+    {
+        using var copy = new MemoryStream();
+        stream.CopyTo(copy);
+        return copy.ToArray();
+    }
+
+    /// Sizes the window to the frame (and the art around it) at the chosen scale, keeping it on screen.
+    private void FitWindow(int frameWidth, int frameHeight)
     {
         if (WindowState != FormWindowState.Normal) return;
+        var content = screen.ContentSize(frameWidth, frameHeight);
+        var (width, height) = (content.Width, content.Height);
         var scale = settings.Scale / 100.0 * DeviceDpi / 96.0;
         var area = Screen.FromControl(this).WorkingArea;
         var chrome = toolbar.Height + statusBar.Height;
@@ -347,8 +371,8 @@ internal sealed class DeviceForm : Form
         {
             case Keys.Control | Keys.H: Press(Qemu.ButtonHome); return true;
             case Keys.Control | Keys.L: Press(Qemu.ButtonPower); return true;
-            case Keys.Control | Keys.Left: Qemu.Rotate(clockwise: false); return true;
-            case Keys.Control | Keys.Right: Qemu.Rotate(clockwise: true); return true;
+            case Keys.Control | Keys.Left: Rotate(clockwise: false); return true;
+            case Keys.Control | Keys.Right: Rotate(clockwise: true); return true;
             case Keys.Control | Keys.Up: Press(Qemu.ButtonVolumeUp); return true;
             case Keys.Control | Keys.Down: Press(Qemu.ButtonVolumeDown); return true;
             case Keys.Control | Keys.Shift | Keys.Z: Qemu.Shake(); return true;
@@ -793,13 +817,129 @@ internal sealed class ScreenView : Control
     /// Every key is the guest's while the screen has focus: arrows, Tab and Return never move it.
     protected override bool IsInputKey(Keys keyData) => true;
 
+    // MARK: - Bezel
+
+    private Image? shell;
+    private BoardArt? art;
+    private int rotation;
+
+    /// The device's art around the screen (null: the screen alone).
+    public void SetShell(BoardArt? art, Image? image)
+    {
+        this.art = image == null ? null : art;
+        shell = image;
+        Invalidate();
+    }
+
+    /// The device's turn in degrees clockwise, as its Rotate buttons left it; the frame's own shape has the last word.
+    public int Rotation
+    {
+        get => rotation;
+        set
+        {
+            rotation = ((value % 360) + 360) % 360;
+            Invalidate();
+        }
+    }
+
+    public event EventHandler<bool>? HomeButton;
+    private bool homeDown;
+
+    /// The rotation the frame shows: the LCD turns with the device, so a landscape frame is a quarter turn.
+    private int EffectiveRotation()
+    {
+        if (art == null || frame == null) return 0;
+        var landscape = frame.Width > frame.Height != art.Cutout.Width > art.Cutout.Height;
+        return landscape ? (rotation is 90 or 270 ? rotation : 90) : (rotation is 0 or 180 ? rotation : 0);
+    }
+
+    /// Shell pixels to control pixels: the shell, turned, fitted and centered.
+    private Matrix? ShellTransform()
+    {
+        if (art == null || frame == null || Width == 0 || Height == 0) return null;
+        var r = EffectiveRotation();
+        var quarter = r is 90 or 270;
+        var (w, h) = quarter ? (art.Height, art.Width) : (art.Width, art.Height);
+        var scale = Math.Min((float)Width / w, (float)Height / h);
+        var m = new Matrix();
+        m.Translate(Width / 2f, Height / 2f);
+        m.Rotate(r);
+        m.Scale(scale, scale);
+        m.Translate(-art.Width / 2f, -art.Height / 2f);
+        return m;
+    }
+
+    /// The control size that shows a `width` × `height` frame at one control pixel per frame pixel, art included.
+    public Size ContentSize(int width, int height)
+    {
+        if (art == null) return new Size(width, height);
+        var landscape = width > height != art.Cutout.Width > art.Cutout.Height;
+        var perShellPixel = (float)(landscape ? height : width) / art.Cutout.Width;
+        var (w, h) = landscape ? (art.Height, art.Width) : (art.Width, art.Height);
+        return new Size((int)Math.Ceiling(w * perShellPixel), (int)Math.Ceiling(h * perShellPixel));
+    }
+
     private RectangleF Fitted()
     {
         if (frame == null || Width == 0 || Height == 0) return RectangleF.Empty;
+        using var m = ShellTransform();
+        if (m != null && art != null)
+        {
+            var c = art.Cutout;
+            PointF[] corners = [new(c.Left, c.Top), new(c.Right, c.Bottom)];
+            m.TransformPoints(corners);
+            return RectangleF.FromLTRB(Math.Min(corners[0].X, corners[1].X), Math.Min(corners[0].Y, corners[1].Y),
+                Math.Max(corners[0].X, corners[1].X), Math.Max(corners[0].Y, corners[1].Y));
+        }
         var scale = Math.Min((float)Width / frame.Width, (float)Height / frame.Height);
         var w = frame.Width * scale;
         var h = frame.Height * scale;
         return new RectangleF((Width - w) / 2, (Height - h) / 2, w, h);
+    }
+
+    /// Whether `p` is on the art's Home button.
+    private bool OnHome(Point p)
+    {
+        using var m = ShellTransform();
+        if (m == null || art == null) return false;
+        m.Invert();
+        PointF[] point = [p];
+        m.TransformPoints(point);
+        var c = art.HomeCenter;
+        var dx = point[0].X - c.X;
+        var dy = point[0].Y - c.Y;
+        return dx * dx + dy * dy <= art.HomeDiameter * art.HomeDiameter / 4f;
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Left && OnHome(e.Location))
+        {
+            homeDown = true;
+            Capture = true;
+            HomeButton?.Invoke(this, true);
+            return;
+        }
+        base.OnMouseDown(e);
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        if (homeDown) return;
+        Cursor = OnHome(e.Location) ? Cursors.Hand : Cursors.Default;
+        base.OnMouseMove(e);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        if (homeDown)
+        {
+            homeDown = false;
+            Capture = false;
+            HomeButton?.Invoke(this, false);
+            return;
+        }
+        base.OnMouseUp(e);
     }
 
     /// A point over the control as 0…1 over the frame, y down; null outside it (clamped instead with `clamp`).
@@ -822,6 +962,17 @@ internal sealed class ScreenView : Control
             TextRenderer.DrawText(g, placeholder, Font, ClientRectangle, ForeColor,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak);
             return;
+        }
+        using (var m = ShellTransform())
+        {
+            if (m != null && shell != null && art != null)
+            {
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.Transform = m;
+                g.DrawImage(shell, 0, 0, art.Width, art.Height);
+                g.ResetTransform();
+            }
         }
         var r = Fitted();
         var integral = Math.Abs(r.Width / frame.Width - Math.Round(r.Width / frame.Width)) < 0.01;

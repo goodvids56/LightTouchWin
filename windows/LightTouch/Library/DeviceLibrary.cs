@@ -49,6 +49,8 @@ internal sealed class AppSettings
     public bool VerboseBoot { get; set; }
     public bool LocalNetwork { get; set; }
     public int Scale { get; set; } = 100;
+    /// The device's art around its screen; off, the screen alone.
+    public bool Bezel { get; set; } = true;
 }
 
 internal sealed class DeviceLibrary

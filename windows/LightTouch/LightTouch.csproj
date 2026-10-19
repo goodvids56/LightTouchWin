@@ -28,5 +28,12 @@
   <ItemGroup>
     <!-- The firmware catalog the Mac app ships: which libraries media import may add to on each build (`media`). -->
     <EmbeddedResource Include="..\..\LightTouchMac\Resources\firmware-catalog.json" LogicalName="firmware-catalog.json" />
+    <!-- The Mac app's flat device art (Board.Art): the bezel around the screen. -->
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\shell.imageset\shell_opaque.png" LogicalName="shell/shell.png" />
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\shell-1g.imageset\shell-1g.png" LogicalName="shell/shell-1g.png" />
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\shell-4g.imageset\shell-4g.png" LogicalName="shell/shell-4g.png" />
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\shell-iphone2g.imageset\shell-iphone2g.png" LogicalName="shell/shell-iphone2g.png" />
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\shell-iphone4.imageset\shell-iphone4.png" LogicalName="shell/shell-iphone4.png" />
+    <EmbeddedResource Include="..\..\LightTouchMac\Assets.xcassets\ipad-frame.imageset\ipad-frame.png" LogicalName="shell/ipad-frame.png" />
   </ItemGroup>
 </Project>

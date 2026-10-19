@@ -6,6 +6,13 @@ namespace LightTouch.Device;
 
 internal enum SoC { S5L8900, S5L8720, S5L8920, S5L8930 }
 
+/// A shell image `Width` × `Height` pixels, the upright screen at `Cutout` in it, and the Home button: `HomeDiameter`
+/// across, centered `HomeBottomInset` above the bottom edge plus its radius.
+internal sealed record BoardArt(string Image, int Width, int Height, System.Drawing.Rectangle Cutout, int HomeDiameter, int HomeBottomInset)
+{
+    public System.Drawing.PointF HomeCenter => new(Width / 2f, Height - HomeBottomInset - HomeDiameter / 2f);
+}
+
 internal sealed record Board(string Id, SoC SoC, string Kind, string ProductType, string MarketingName)
 {
     public static readonly Board N45 = new("n45ap", SoC.S5L8900, "iPod touch", "iPod1,1", "iPod touch");
@@ -22,6 +29,17 @@ internal sealed record Board(string Id, SoC SoC, string Kind, string ProductType
     public static Board? Find(string? id) => All.FirstOrDefault(b => b.Id == id);
 
     public bool IsPhone => Kind == "iPhone";
+
+    /// The flat device art around the screen (Board.swift's art: the Mac app's shell images, in the app's resources).
+    public BoardArt Art => Id switch
+    {
+        "n45ap" => new("shell-1g", 734, 1311, new(70, 211, 594, 891), 112, 59),
+        "m68ap" or "n88ap" => new("shell-iphone2g", 383, 729, new(33, 130, 320, 480), 70, 34),
+        "k48ap" => new("ipad-frame", 852, 1108, new(42, 42, 768, 1024), 31, 9),
+        "n81ap" => new("shell-4g", 696, 1310, new(54, 213, 590, 886), 119, 49),
+        "n90ap" => new("shell-iphone4", 730, 1426, new(48, 236, 640, 960), 140, 52),
+        _ => new("shell", 737, 1318, new(74, 213, 594, 891), 122, 54),
+    };
 
     /// The S5L8920/S5L8930 boards: they boot kboot (iBoot too on K48) through BootRecipe.IPad.
     public bool IsKBoot => SoC is SoC.S5L8920 or SoC.S5L8930;

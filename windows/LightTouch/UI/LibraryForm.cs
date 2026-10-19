@@ -123,6 +123,9 @@ internal sealed class LibraryForm : Form
         var lan = new ToolStripMenuItem("Attach to Local Network") { CheckOnClick = true, Checked = settings.LocalNetwork };
         lan.ToolTipText = "Let devices reach this PC's local network (printers, file shares). Off: the internet only.";
         lan.Click += (_, _) => Change(s => s.LocalNetwork = lan.Checked);
+        var bezel = new ToolStripMenuItem("Show Device Bezel") { CheckOnClick = true, Checked = settings.Bezel };
+        bezel.ToolTipText = "Draw the device around its screen (takes effect when a device starts).";
+        bezel.Click += (_, _) => Change(s => s.Bezel = bezel.Checked);
         var scale = new ToolStripMenuItem("Window Size");
         foreach (var percent in new[] { 100, 150, 200 })
         {
@@ -134,7 +137,7 @@ internal sealed class LibraryForm : Form
             };
             scale.DropDownItems.Add(item);
         }
-        menu.DropDownItems.AddRange([audio, verbose, lan, scale, new ToolStripSeparator()]);
+        menu.DropDownItems.AddRange([audio, verbose, lan, bezel, scale, new ToolStripSeparator()]);
         menu.DropDownItems.Add("Open Assets Folder", null, (_, _) => Open(library.Assets));
         menu.DropDownItems.Add(new ToolStripLabel("Settings apply at a device's next start.") { ForeColor = SystemColors.GrayText });
         return menu;
