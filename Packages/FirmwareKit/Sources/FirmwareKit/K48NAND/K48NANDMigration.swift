@@ -1,9 +1,10 @@
-// The format 2 migration of an A4 or S5L8920 device (k48, n81, n90, n18, n88) or an iPod touch 2G (n72): its legacy
-// NAND store and page overlay become an image store (base/nand, read-only) and the device's live NAND, a clone of it
-// with the overlay's pages applied (overlay/nand, PreparedDeviceBoot.liveNAND), which the emulator writes in place.
-// Lazy: a boot admission step (FirmwareBootAdmission), under the stopped lease, before the first start that needs it.
-// The boards differ only in their stores (Store: K48NANDImage's chip files and .dirty bitmaps, N72NANDImage's page
-// directories); the steps are the same.
+// The format 2 migration of an A4 or S5L8920 device (k48, n81, n90, n18, n88), an iPod touch 2G (n72), or an iPod
+// touch 1G or original iPhone (n45, m68): its legacy NAND store and page overlay become an image store (base/nand,
+// read-only) and the device's live NAND, a clone of it with the overlay's pages applied (overlay/nand,
+// PreparedDeviceBoot.liveNAND), which the emulator writes in place. Lazy: a boot admission step
+// (FirmwareBootAdmission), under the stopped lease, before the first start that needs it. The boards differ only in
+// their stores (Store: K48NANDImage's chip files and .dirty bitmaps, PageNANDImage's page directories); the steps are
+// the same.
 //
 //   1. preflight: room for the new base, the live NAND's changes and the volume proof, plus 1 GiB;
 //   2. intent work/migration.json (phase building), then build both into migrating/ (Store.convert);
@@ -139,8 +140,8 @@ public enum K48NANDMigration {
         return true
     }
 
-    /// A kboot board's or the iPod touch 2G's format 1 record over its own legacy store (not a development base
-    /// outside the device).
+    /// A kboot board's, the iPod touch 2G's or a 1.x board's format 1 record over its own legacy store (not a
+    /// development base outside the device).
     static func eligible(_ record: [String: Any], base: URL, device: URL) -> Bool {
         let board = HostRuntime.Board(rawValue: record["board"] as? String ?? "")
         let nand = base.appendingPathComponent("nand")
@@ -148,41 +149,55 @@ public enum K48NANDMigration {
             StoragePathAuthority.canonicalPath(base).hasPrefix(StoragePathAuthority.canonicalPath(device) + "/")
         else { return false }
         if board == .n72 { return !N72NANDImage.isImage(nand) && (try? VolumeRebuild.board(of: nand)) == .ipod }
+        if board?.soc == .s5l8900 {
+            return PageNANDImage.of(nand) == nil && (try? VolumeRebuild.board(of: nand)) == .legacy
+        }
         return board?.isKBoot == true && (try? K48NAND.storeFormat(nand)) == .legacy
     }
 
     /// A board's legacy store and overlay, and its conversion and proof (both read the overlay as the emulator did).
     struct Store {
         let chips: Int
+        /// One chip file's size: the most zeros APFS can fill in before the chip is compacted.
+        let chipBytes: Int
         /// Whether the overlay holds pages, so the device gets a live NAND of its own.
         let serves: Bool
         /// The overlay's entries that go to legacy/overlay.
         let overlayFiles: [String]
+        /// The most the compacted live NAND holds of its own: copy-on-write moves 16 KiB for each record written over
+        /// the base (an overlay page file, or a 4 KiB unit of an overlay chip file).
+        let liveBytes: Int64
         let convert: (_ baseOut: URL, _ liveOut: URL?, _ step: () -> Void) throws -> Void
         let verify: (_ baseOut: URL, _ liveOut: URL?, _ step: () -> Void) throws -> Void
 
         init(nand: URL, overlay: URL) throws {
             let present = FileManager.default.fileExists(atPath: overlay.path)
-            if (try? VolumeRebuild.board(of: nand)) == .ipod {
-                let served = N72NANDImage.overlayServes(overlay)
+            let pages = try? VolumeRebuild.board(of: nand)
+            if pages == .ipod || pages == .legacy {
+                let image = pages == .ipod ? PageNANDImage.n72 : try PageNANDImage.s5l8900(at: nand)
+                let served = image.overlayServes(overlay)
                 let legacyOverlay = served ? overlay : nil
-                chips = N72NANDImage.chips
+                chips = image.chips
+                chipBytes = image.chipBytes
                 serves = served
-                overlayFiles = present ? N72NANDImage.overlayFiles(overlay) : []
-                convert = {
-                    try N72NANDImage.convert(base: nand, overlay: legacyOverlay, baseOut: $0, liveOut: $1, step: $2)
-                }
-                verify = {
-                    try N72NANDImage.verify(base: nand, overlay: legacyOverlay, baseOut: $0, liveOut: $1, step: $2)
-                }
+                overlayFiles = present ? image.overlayFiles(overlay) : []
+                let overlayPages =
+                    served
+                    ? PageNANDImage.LegacyReader(image, base: overlay, overlay: overlay)
+                        .overlayNames.reduce(0) { $0 + $1.count } : 0
+                liveBytes = Int64(overlayPages) * 16384
+                convert = { try image.convert(base: nand, overlay: legacyOverlay, baseOut: $0, liveOut: $1, step: $2) }
+                verify = { try image.verify(base: nand, overlay: legacyOverlay, baseOut: $0, liveOut: $1, step: $2) }
                 return
             }
             let geo = try K48NAND.geometry(store: nand)
             let served = K48NANDImage.overlayServes(overlay, geo)
             let legacyOverlay = served ? overlay : nil
             chips = geo.numCS
+            chipBytes = geo.pagesPerCE * (geo.pageSize + geo.spareBytes)
             serves = served
             overlayFiles = present ? K48NANDImage.overlayFiles(overlay) : []
+            liveBytes = served ? 4 * overlayFiles.reduce(0) { $0 + allocated(overlay.appendingPathComponent($1)) } : 0
             convert = {
                 try K48NANDImage.convert(base: nand, overlay: legacyOverlay, baseOut: $0, liveOut: $1, step: $2)
             }
@@ -211,9 +226,10 @@ public enum K48NANDMigration {
         let store = try Store(nand: nand, overlay: overlay)
         let serves = store.serves
         let overlayFiles = store.overlayFiles
-        let needed =
-            2 * allocated(nand) + overlayFiles.reduce(0) { $0 + allocated(overlay.appendingPathComponent($1)) }
-            + (1 << 30)
+        // The new base (no larger than the format 1 store's records), the volume proof (one volume set at a time, no
+        // more than the store holds), the live NAND's own records, the zeros APFS fills in around one chip's writes
+        // before it is compacted, and 1 GiB to spare.
+        let needed = 2 * allocated(nand) + store.liveBytes + Int64(store.chipBytes) + (1 << 30)
         guard try available(layout.device) >= needed else { throw NeedsSpace(bytes: needed) }
 
         let baseRel = try relative(base, to: layout.device)

@@ -224,7 +224,7 @@ public enum StoppedVolumeEdit {
                     before: before
                 )
             }
-            if fm.fileExists(atPath: edit.base.appendingPathComponent("nand/bank0").path) {
+            if (try? VolumeRebuild.board(of: edit.base.appendingPathComponent("nand"))) == .legacy {
                 guard amend == nil else { throw FirmwareError(.unsupported, "this edit needs a YaFTL or N72 store") }
                 try await commitLegacy(edit: edit, image: session.image, log: log)
                 return
@@ -337,6 +337,11 @@ public enum StoppedVolumeEdit {
     {
         try HFSPlusVolume(image, writable: true).leaveJournalToDevice()
         let nand = edit.base.appendingPathComponent("nand")
+        // an image store (format 2) is edited in the generation's live clone, made here if the device has none yet
+        let live =
+            PageNANDImage.of(nand) == nil
+            ? nil
+            : try PageNANDImage.Store(PreparedDeviceBoot.liveNAND(base: nand, overlay: edit.overlay), writable: true)
         let ftl = try N45FTL(base: nand, overlay: edit.overlay)
         let f = try FileHandle(forReadingFrom: image)
         defer { try? f.close() }
@@ -348,15 +353,19 @@ public enum StoppedVolumeEdit {
             let old = ftl.read(lpn: lpn)
             if data != old?.data ?? [UInt8](repeating: 0, count: ps) {
                 let p = ftl.location(lpn: lpn)
-                let dir = edit.overlay.appendingPathComponent("bank\(p.bank)")
-                try fm.createDirectory(at: dir, withIntermediateDirectories: true)
-                try Data(data + (old?.spare ?? N45NAND.dataSpare(lpn))).write(
-                    to: dir.appendingPathComponent("\(p.page).page")
-                )
+                let record = data + (old?.spare ?? N45NAND.dataSpare(lpn))
+                if let live {
+                    try live.write(p, record)
+                } else {
+                    let dir = edit.overlay.appendingPathComponent("bank\(p.bank)")
+                    try fm.createDirectory(at: dir, withIntermediateDirectories: true)
+                    try Data(record).write(to: dir.appendingPathComponent("\(p.page).page"))
+                }
                 changed += 1
             }
             lpn += 1
         }
+        try live?.sync()
         log("wrote \(changed) changed pages through the 1.x FTL")
         let lockURL = edit.base.appendingPathComponent("device.lock.json")
         let provenance: [String: Any] = [

@@ -97,6 +97,10 @@ struct SingleConfig: Decodable {
     var homeReference: String?
     /// At the first Home, Device ▸ Accessibility's White on Black and VoiceOver on and off again (`accessibility`).
     var accessibility: Bool?
+    /// At the first Home these files go through Import Media's path with the itmedia and itphoto in mediaTools; the
+    /// libraries are read back before, after and at every later Home (`mediaImport`, `mediaCount`).
+    var media: [String]?
+    var mediaTools: String?
 }
 
 /// A page only wifi0 serves (a guestfwd to a shell that answers any request), so a cellular route can't stand in for
@@ -175,6 +179,7 @@ nonisolated enum WiFiProbe {
         && ((lock?.productVersion ?? "3.1")
             .compare("3.1", options: .numeric) != .orderedAscending)
 
+    var mediaTitles: [String] = []
     func boot(_ generation: Int) async {
         do { try d.boot(generation: generation, guestPackage: offer()) } catch { fail("boot \(generation): \(error)") }
         await waitLit(d, ipad ? 0.2 : 0.03, d.profile.bootBudget * slow)  // the app's own boot budget (iPad 300 s)
@@ -501,6 +506,16 @@ nonisolated enum WiFiProbe {
         }
         if s.accessibility == true, generation == 1 {
             await accessibility(guest: GuestServices(agent: guestAgent))
+        }
+        if let media = s.media, asks {
+            if generation == 1 {
+                await mediaCounts(d, agent: guestAgent, generation: generation, stage: "before", titles: [])
+                mediaTitles = await importMedia(d, agent: guestAgent, files: media, tools: s.mediaTools ?? "")
+                await mediaCounts(d, agent: guestAgent, generation: generation, stage: "after", titles: mediaTitles)
+            }
+            // Music loads (and checks) the library; on 4.x it deleted one whose signature didn't hold.
+            if !mediaTitles.isEmpty { await openMusic(d, agent: guestAgent) }
+            await mediaCounts(d, agent: guestAgent, generation: generation, stage: "music", titles: mediaTitles)
         }
         if let path = s.readFile {
             let data = asks ? try? await guestAgent.get(path) : nil

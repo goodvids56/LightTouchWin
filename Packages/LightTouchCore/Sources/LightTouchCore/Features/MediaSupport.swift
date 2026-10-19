@@ -25,9 +25,10 @@ public nonisolated enum MediaSupport {
     }
 
     /// Whether this firmware's helpers can add to `destination` ("Music", "Videos", "Photos"): MusicLibrary's
-    /// purchase-folder insert over the iTunes Library.itlp library and PLCameraAlbum's save with the saved path
-    /// (3.x), Music on 5.x through ML3's importer; 4.x's post-processing deletes a library it can't verify, and
-    /// neither 4.x nor 5.x has a photo save that names the saved file (qemu-ios contrib/it-media/README.md).
+    /// purchase-folder insert over the iTunes Library.itlp library (3.x and 4.x, where the helper writes as Music
+    /// does), ML3's importer (5.x to 7.x), PLCameraAlbum's save with the saved path (3.x) and AssetsLibrary's, which
+    /// names the saved asset (4.x on) (qemu-ios contrib/it-media/README.md). The catalog lists what a booted import
+    /// has shown on each firmware.
     public static func supports(_ destination: String, on firmware: Firmware) -> Bool {
         !firmware.prerelease && firmware.media.contains(destination)
     }

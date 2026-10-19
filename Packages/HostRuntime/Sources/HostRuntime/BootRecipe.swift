@@ -144,7 +144,7 @@ public nonisolated enum BootRecipe {
     }
 
     /// The iPod touch 1G (qemu-ios `-M iPod-Touch-1G`): the S5L8900 bootrom and the base's iBoot-204 (IMG2 payload),
-    /// the base's NAND under a page overlay, and the NOR as a pflash drive on the private writable copy (iBoot and
+    /// the device's NAND (an image store's live clone, or the base's page directory under a page overlay), and the NOR as a pflash drive on the private writable copy (iBoot and
     /// the kernel write it). Wi-Fi is the machine's Marvell 88W8686 (default on; `wifi: false` removes the card).
     /// No GID blobs on this machine. The original iPhone is the same machine (qemu-ios `-M iPhone-2G`, its subtype).
     public struct IPod1G {
@@ -173,6 +173,7 @@ public nonisolated enum BootRecipe {
         public var iBoot: String
         public var nand: String
         public var writableNOR: String
+        /// The NAND page overlay (nand-overlay); empty for an image store, which the emulator writes in place.
         public var overlay: String
         public var usbAddress: String? = nil
         public var wifi = true
@@ -277,7 +278,7 @@ public nonisolated enum BootRecipe {
     {
         let machine =
             "\(hardware.machine),bootrom=\(escape(d.bootrom)),iboot=\(escape(d.iBoot))"
-            + ",nand=\(escape(d.nand)),nand-overlay=\(escape(d.overlay))"
+            + ",nand=\(escape(d.nand))" + (d.overlay.isEmpty ? "" : ",nand-overlay=\(escape(d.overlay))")
             + (d.usbAddress.map { ",usb-tcp-addr=\($0)" } ?? "") + (d.wifi ? "" : ",wifi=off")
             + (d.guestPackage.map { ",guest-package=\(escape($0))" } ?? "") + options(d.machineOptions)
         let argv =

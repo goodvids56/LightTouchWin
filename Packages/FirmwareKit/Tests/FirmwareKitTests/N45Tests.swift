@@ -83,11 +83,10 @@ import Testing
     /// as a flat image from LBA 3, and mkstore.py's VFL context (usnDec, next page, checksums; no reserved pool).
     static func oracle(_ store: URL) throws -> (image: Data, vfl: [UInt8]) {
         var best: [UInt32: (key: (UInt32, Int), page: Data)] = [:]
+        let nand = try PageNANDImage.Store(store)
         for b in 0..<8 {
-            let bank = store.appendingPathComponent("bank\(b)")
-            for f in try FileManager.default.contentsOfDirectory(atPath: bank.path) {
-                let p = Int(f.split(separator: ".")[0])!
-                let raw = [UInt8](try Data(contentsOf: bank.appendingPathComponent(f)))
+            for p in nand.dataBlocks(b).flatMap({ $0 * 128..<($0 + 1) * 128 }) {
+                let raw = try nand.read(b, p)
                 guard raw[2048 + 9] == 0x40 else { continue }
                 let u32 = { (o: Int) in (0..<4).reduce(UInt32(0)) { $0 | UInt32(raw[o + $1]) << (8 * $1) } }
                 let (lpn, key) = (u32(2048), (u32(2052), (p % 128) * 8 + b))
@@ -132,10 +131,15 @@ import Testing
         try vol.write(to: volume)
         let (written, meta) = try N45NAND.write(volume: volume, out: out, filID: 0x4330_3032)
         #expect(written == 3 * ps - 3 && meta == 1 + 8 + 8 * 8 + 1 + 4 + 1 + 3)
-        let file = { (p: N45NAND.Page) in out.appendingPathComponent("bank\(p.bank)/\(p.page).page") }
-        let absent = (0..<3 * ps).filter { !fm.fileExists(atPath: file(N45NAND.location(lpn: $0)).path) }
+        // a page the store holds (not erased: a hole, or every bit set)
+        let store = try PageNANDImage.Store(out)
+        let file = { (p: N45NAND.Page) -> [UInt8]? in
+            let r = try? store.read(p)
+            return r == PageNANDImage.s5l8900(banks: 8).blankRecord ? nil : r
+        }
+        let absent = (0..<3 * ps).filter { file(N45NAND.location(lpn: $0)) == nil }
         #expect(
-            absent.isEmpty && !fm.fileExists(atPath: file(N45NAND.location(lpn: 3 * ps)).path),
+            absent.isEmpty && file(N45NAND.location(lpn: 3 * ps)) == nil,
             "absent lpns \(absent.prefix(8))"
         )
         // The map pages as _FTLRestore finds them (it scans the context blocks and copies each type-0x46 page to
@@ -144,13 +148,8 @@ import Testing
         var maps: [Int: [UInt8]] = [:]
         for bank in 0..<N45NAND.banks {
             for blockPage in 0..<N45NAND.pagesPerBlock {
-                let raw = try? Data(
-                    contentsOf: file(
-                        N45NAND.Page(bank: bank, page: N45NAND.ftlStart * N45NAND.pagesPerBlock + blockPage)
-                    )
-                )
-                guard let raw, raw.count == pp + N45NAND.spare, raw[raw.startIndex + pp + 9] == 0x46 else { continue }
-                let b = [UInt8](raw)
+                let raw = file(N45NAND.Page(bank: bank, page: N45NAND.ftlStart * N45NAND.pagesPerBlock + blockPage))
+                guard let b = raw, b[pp + 9] == 0x46 else { continue }
                 maps[Int(b[pp + 4]) | Int(b[pp + 5]) << 8] = Array(b[0..<pp])
             }
         }
@@ -165,11 +164,11 @@ import Testing
 
         let le = { (b: [UInt8], o: Int, n: Int) in (0..<n).reduce(UInt64(0)) { $0 | UInt64(b[o + $1]) << (8 * $1) } }
         for bank in 0..<N45NAND.banks {
-            let first = [UInt8](try Data(contentsOf: file(N45NAND.Page(bank: bank, page: 35 * 128))))
+            let first = try #require(file(N45NAND.Page(bank: bank, page: 35 * 128)))
             for c in 1..<8 {
-                #expect([UInt8](try Data(contentsOf: file(N45NAND.Page(bank: bank, page: 35 * 128 + c)))) == first)
+                #expect(file(N45NAND.Page(bank: bank, page: 35 * 128 + c)) == first)
             }
-            #expect(!fm.fileExists(atPath: file(N45NAND.Page(bank: bank, page: 35 * 128 + 8)).path))
+            #expect(file(N45NAND.Page(bank: bank, page: 35 * 128 + 8)) == nil)
             let d = Array(first[0..<pp])
             #expect(
                 Array(first[pp...]) == [UInt8](repeating: 0xFF, count: 8) + [0, 0x80]
@@ -514,12 +513,15 @@ import Testing
         try Data(count: (2 * ps - 3) * pp).write(to: volume)
         let (written, _) = try N45NAND.write(volume: volume, out: out, filID: 0x4330_3030, banks: 4, bbtMap: true)
         #expect(written == 2 * ps - 3)
-        #expect(try fm.contentsOfDirectory(atPath: out.path).sorted() == ["bank0", "bank1", "bank2", "bank3"])
+        let names = ["cs0.pages", "cs1.pages", "cs2.pages", "cs3.pages", "geometry.json"]
+        #expect(try fm.contentsOfDirectory(atPath: out.path).sorted() == names)
+        #expect(PageNANDImage.of(out) == .s5l8900(banks: 4))
         #expect(N45NAND.location(lpn: 5, banks: 4) == N45NAND.Page(bank: 1, page: (201 + 23) * 128 + 1))
-        let bbt = [UInt8](try Data(contentsOf: out.appendingPathComponent("bank3/\(4095 * 128).page")))
+        let store = try PageNANDImage.Store(out)
+        let bbt = try store.read(N45NAND.Page(bank: 3, page: 4095 * 128))
         #expect(Array(bbt[0..<13]) == Array("DEVICEINFOBBT".utf8) && bbt[0x34] == 0x00 && bbt[0x35] == 0x02)
         #expect(bbt[0x38] == 0xFF && bbt[0x38 + 511] == 0x7F)
-        let fil = [UInt8](try Data(contentsOf: out.appendingPathComponent("bank0/0.page")))
+        let fil = try store.read(N45NAND.Page(bank: 0, page: 0))
         #expect(Array(fil[0..<4]) == Array("000C".utf8))
         // The N45's table stays as devos50 wrote it: no bitmap.
         let n45 = N45NAND.metadataPages(fsPages: 16, filID: 0x4330_3032)[N45NAND.Page(bank: 0, page: 4095 * 128)]!

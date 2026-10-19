@@ -157,7 +157,7 @@ public enum N72NAND {
     /// arbitrary backing-file padding or repair a malformed filesystem.
     @discardableResult
     public static func write(volume: URL, blocks: Int, epoch: Int, out: URL) throws -> (volume: Int, metadata: Int) {
-        let store = try N72NANDImage.Store(create: out)
+        let store = try N72NANDImage.create(out)
         let meta = metadataPages(blocks: blocks, epoch: epoch)
         for (p, d) in meta { try store.write(p, d) }
         let f = try FileHandle(forReadingFrom: volume)

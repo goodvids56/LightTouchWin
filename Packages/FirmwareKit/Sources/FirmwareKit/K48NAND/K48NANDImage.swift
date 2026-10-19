@@ -111,6 +111,57 @@ enum K48NANDImage {
         guard got == count else { throw FirmwareError(.internal, "NAND read: \(String(cString: strerror(errno)))") }
     }
 
+    /// Syncs `fd`, then punches every all-zero 4 KiB page of its data, which reads the same as a hole (the blank page
+    /// under every image store's XOR encoding), and syncs again. APFS fills a gap under 16 MiB around a write with
+    /// allocated zeros at write-back, so a store written in scattered records holds far more than its records (a
+    /// migrated M68's live NAND, 3.9 GB for 1 GB of pages); punching gives that back at 4 KiB granularity. The
+    /// emulator's later writes fill again around themselves only. Returns the bytes punched.
+    @discardableResult
+    static func compact(_ fd: Int32, path: String) throws -> Int {
+        let page = 4096
+        let chunk = 1 << 20
+        var buffer = [UInt8](repeating: 0, count: chunk)
+        let zero = [UInt8](repeating: 0, count: page)
+        var punched = 0
+        func fail() -> FirmwareError {
+            FirmwareError(.internal, "compact \(path): \(String(cString: strerror(errno)))")
+        }
+        func punch(_ from: Int, _ to: Int) throws {
+            var hole = fpunchhole_t(fp_flags: 0, reserved: 0, fp_offset: off_t(from), fp_length: off_t(to - from))
+            guard fcntl(fd, F_PUNCHHOLE, &hole) == 0 else { throw fail() }
+            punched += to - from
+        }
+        guard fsync(fd) == 0 else { throw fail() }  // the fill happens at write-back
+        var offset: off_t = 0
+        while true {
+            let start = lseek(fd, offset, SEEK_DATA)
+            guard start >= 0 else { break }
+            let end = lseek(fd, start, SEEK_HOLE)
+            guard end > start else { break }
+            var at = (Int(start) + page - 1) & ~(page - 1)
+            let limit = Int(end) & ~(page - 1)
+            var run: Int?  // where the current run of zero pages starts
+            while at < limit {
+                let n = min(chunk, limit - at)
+                let got = buffer.withUnsafeMutableBytes { pread(fd, $0.baseAddress, n, off_t(at)) }
+                guard got == n else { throw fail() }
+                for p in Swift.stride(from: 0, to: n, by: page) {
+                    let blank = same(buffer, p, zero, 0, page)
+                    if blank, run == nil { run = at + p }
+                    if !blank, let from = run {
+                        try punch(from, at + p)
+                        run = nil
+                    }
+                }
+                at += n
+            }
+            if let from = run { try punch(from, limit) }
+            offset = end
+        }
+        guard fsync(fd) == 0 else { throw fail() }
+        return punched
+    }
+
     static func write(_ fd: Int32, _ bytes: ArraySlice<UInt8>, at offset: Int) throws {
         let n = bytes.withUnsafeBytes { pwrite(fd, $0.baseAddress, $0.count, off_t(offset)) }
         guard n == bytes.count else {
@@ -186,7 +237,7 @@ enum K48NANDImage {
                 // ponytail: a block with any record is written whole (zeros for its erased records); sparse per block.
                 if !same(out, 0, zeros, 0, blockBytes) { try write(fd, out[...], at: block * blockBytes) }
             }
-            guard fsync(fd) == 0 else { throw FirmwareError(.internal, "\(path): \(String(cString: strerror(errno)))") }
+            try compact(fd, path: path)
         }
         guard let liveOut, overlayServes(overlay, geo) else { return }
         // file by file (clonefile(2) discourages directories); baseOut isn't locked yet, so the clones are writable
@@ -214,7 +265,7 @@ enum K48NANDImage {
                 encode(record, into: &out, records: 1, stride: stride, zeros: zeros)
                 try write(fd, out[...], at: page * stride)
             }
-            guard fsync(fd) == 0 else { throw FirmwareError(.internal, "\(path): \(String(cString: strerror(errno)))") }
+            try compact(fd, path: path)
         }
     }
 

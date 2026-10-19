@@ -20,9 +20,155 @@ import Testing
         #expect(ok(.cleanStatusBar, "4.2.1") && ok(.cleanStatusBar, "7.1.2"))
         #expect(ok(.cleanStatusBar, "2.2.1") && ok(.cleanStatusBar, "4.1"), "SpringBoard's demo keys")
         #expect(ok(.cleanStatusBar, "5.0.1") && ok(.cleanStatusBar, "6.0") && ok(.cleanStatusBar, "7.0.4"))
-        #expect(!ok(.cleanStatusBar, "1.1.4", tools: false), "no guest tools to write the keys")
-        #expect(!ok(.signalNumbers, "1.0", tools: false) && ok(.timeMachine, "1.0", tools: false))
+        // 1.x: no guest tools, the keys its SpringBoard and MobileSafari read written while it is stopped
+        for v in ["1.0", "1.1.4"] {
+            #expect(ok(.signalNumbers, v, tools: false) && ok(.keynoteClock, v, tools: false), "\(v)")
+            #expect(ok(.cleanStatusBar, v, tools: false) && ok(.timeMachine, v, tools: false), "\(v)")
+            for t in [Tweak.slowAnimations, .coreAnimationColors, .emojiEverywhere, .developerSettings] {
+                #expect(!ok(t, v, tools: false), "\(t) has no 1.x reader")
+            }
+        }
+        #expect(!ok(.safariDebug, "1.0", tools: false) && ok(.safariDebug, "1.1.4", tools: false), "1.1's console")
+        #expect(!ok(.signalNumbers, "3.1.3", tools: false), "past 1.x the agent writes them")
         #expect(!ok(.timeMachine, "6.0", pinned: true), "a beta's own pinned clock wins")
+    }
+
+    /// Each row's note: a disabled one says why in a line, a 1.x one that works when it takes effect.
+    @Test func notesSayWhyAndWhen() {
+        func note(_ t: Tweak, _ v: String, tools: Bool = true, pinned: Bool = false) -> String? {
+            t.note(version: v, guestTools: tools, clockPinned: pinned)
+        }
+        let next = "Takes effect at the next start."
+        for v in ["1.0", "1.1.4"] {
+            for t in [Tweak.signalNumbers, .keynoteClock, .cleanStatusBar] { #expect(note(t, v, tools: false) == next) }
+            #expect(note(.slowAnimations, v, tools: false) == "Needs iPhone OS 3.0 or later.")
+            #expect(note(.coreAnimationColors, v, tools: false) == "Needs iPhone OS 3.1 or later.")
+            #expect(note(.emojiEverywhere, v, tools: false) == "Needs iPhone OS 2.2 or later.")
+            #expect(note(.developerSettings, v, tools: false) == "Needs iOS 4.2 or later.")
+            #expect(note(.timeMachine, v, tools: false) == nil, "a machine option of every start")
+        }
+        #expect(note(.safariDebug, "1.0", tools: false) == "Needs iPhone OS 1.1 or later.")
+        #expect(note(.safariDebug, "1.1.4", tools: false) == next)
+        #expect(note(.signalNumbers, "3.1.3") == nil, "applied right away by the agent")
+        #expect(note(.keynoteClock, "4.2.1") == "Only up to iOS 4.0.2.")
+        #expect(note(.emojiEverywhere, "5.1.1") == "Only up to iOS 4.3.5.")
+        #expect(note(.signalNumbers, "3.1.3", tools: false) == "Needs the guest tools.")
+        #expect(note(.timeMachine, "6.0", pinned: true) == "This beta keeps its own clock.")
+        #expect(Tweak.cleanStatusBar.caption(version: "1.0") == "SBFakeTime, SBFakeTimeString, SBFakeBars")
+        #expect(
+            Tweak.cleanStatusBar.caption(version: "1.1.4") == "SBFakeTime, SBFakeTimeString, SBFakeCarrier, SBFakeBars"
+        )
+    }
+
+    /// 1.x: the same keys as 2.x, but for 1.0's SpringBoard, which has no SBFakeCarrier.
+    @Test func iPhoneOS1TakesTheSameKeys() {
+        var s = TweakSettings()
+        s.on = [.signalNumbers, .keynoteClock, .cleanStatusBar, .safariDebug, .slowAnimations]
+        s.statusBar.time = "9:41 AM"
+        s.statusBar.carrier = "Light Touch"
+        #expect(
+            s.defaults(version: "1.1.4").map(\.id) == [
+                "com.apple.springboard SBShowRSSI", "com.apple.springboard SBShowGSMRSSI",
+                "com.apple.springboard SBFakeBars", "com.apple.springboard SBFakeTime",
+                "com.apple.springboard SBFakeTimeString", "com.apple.springboard SBFakeCarrier",
+                "com.apple.mobilesafari ConsoleEnabled",
+            ]
+        )
+        #expect(
+            s.defaults(version: "1.0").map(\.id) == [
+                "com.apple.springboard SBShowRSSI", "com.apple.springboard SBShowGSMRSSI",
+                "com.apple.springboard SBFakeBars", "com.apple.springboard SBFakeTime",
+                "com.apple.springboard SBFakeTimeString",
+            ]
+        )
+        #expect(s.live(version: "1.0") == (nil, nil) as (Data?, UInt32?), "no live ops: there is no agent")
+    }
+
+    /// A 1.x device's keys go into it while stopped, before its start: once each start, the removal of what it wrote
+    /// and no longer wants with them, nothing when none is on or was written, and a failure kept for the panel while
+    /// the device starts as it is.
+    @Test func iPhoneOS1WritesTheKeysWhileStopped() async throws {
+        try await withTemporaryDirectoryAsync { dir in
+            let tweaks = DeviceTweaks(
+                settings: DeviceSettingsFile(directory: dir),
+                version: "1.0",
+                guestTools: false,
+                clockPinned: false
+            )
+            var sent: [[GuestDefault]] = []
+            let write: ([GuestDefault]) async throws -> Bool = {
+                sent.append($0)
+                return true
+            }
+            await tweaks.writeStopped(write)
+            #expect(sent.isEmpty, "nothing on, nothing written")
+            let model = TweaksPanelModel(tweaks: tweaks, guest: nil)
+            model.set(.keynoteClock, on: true)
+            model.set(.signalNumbers, on: true)
+            #expect(tweaks.settings.on == [.keynoteClock, .signalNumbers], "1.x takes them")
+            await tweaks.writeStopped(write)
+            #expect(
+                sent.last?.map(\.id).sorted() == [
+                    "com.apple.springboard SBFakeTime", "com.apple.springboard SBShowGSMRSSI",
+                    "com.apple.springboard SBShowRSSI",
+                ]
+            )
+            #expect(tweaks.settings.written.count == 3)
+            model.set(.signalNumbers, on: false)
+            await tweaks.writeStopped(write)
+            #expect(sent.last?.filter { $0.value == nil }.map(\.key).sorted() == ["SBShowGSMRSSI", "SBShowRSSI"])
+            #expect(tweaks.settings.written == ["com.apple.springboard SBFakeTime"])
+            struct Refused: Error {}
+            await tweaks.writeStopped { _ in throw Refused() }
+            #expect(model.status?.hasPrefix("The tweaks weren’t written") == true)
+            #expect(tweaks.settings.written == ["com.apple.springboard SBFakeTime"], "kept for the next start")
+            await tweaks.writeStopped(write)
+            #expect(model.status == nil)
+
+            let agent = DeviceTweaks(
+                settings: DeviceSettingsFile(directory: dir),
+                version: "3.1.3",
+                guestTools: true,
+                clockPinned: false
+            )
+            let count = sent.count
+            await agent.writeStopped(write)
+            #expect(sent.count == count, "with guest tools the agent writes them while it runs")
+        }
+    }
+
+    /// 1.x runs no agent: the panel never asks it for the hidden apps (no spinner, no error), and says why.
+    @Test func iPhoneOS1PanelNeverWaitsOnAnAgent() async throws {
+        try await withTemporaryDirectoryAsync { dir in
+            let link = FakeGuestLink()
+            link.files["/Applications/DemoApp.app/Info.plist"] = try PropertyListSerialization.data(
+                fromPropertyList: ["CFBundleIdentifier": "com.apple.DemoApp"],
+                format: .xml,
+                options: 0
+            )
+            let guest = GuestServices(agent: GuestAgent(link: link, cache: GuestAgentCache()))
+            let tweaks = DeviceTweaks(
+                settings: DeviceSettingsFile(directory: dir),
+                version: "1.1.4",
+                guestTools: false,
+                clockPinned: false
+            )
+            let model = TweaksPanelModel(tweaks: tweaks, guest: guest)
+            #expect(model.isRunning && !model.opensHiddenApps)
+            await model.listHiddenApps()
+            #expect(model.hiddenApps == nil && model.status == nil && link.ops.isEmpty)
+            #expect(model.statusBarSetsCarrier && model.note(.cleanStatusBar) == "Takes effect at the next start.")
+            let one = TweaksPanelModel(
+                tweaks: DeviceTweaks(
+                    settings: DeviceSettingsFile(directory: dir),
+                    version: "1.0",
+                    guestTools: false,
+                    clockPinned: false
+                ),
+                guest: nil
+            )
+            #expect(!one.statusBarSetsCarrier, "1.0's SpringBoard has no SBFakeCarrier")
+        }
     }
 
     /// A guest root holding a developer-disk-images/<minor>/ pair for each of `minors`.

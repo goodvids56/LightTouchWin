@@ -23,7 +23,7 @@ struct PreparedBaseTests {
     static func base(_ dir: URL, seed: String, pages: [N72NAND.Page: UInt8] = [.init(cs: 0, page: 1): 7]) throws {
         let fm = FileManager.default
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        let store = try N72NANDImage.Store(create: dir.appendingPathComponent("nand"))
+        let store = try N72NANDImage.create(dir.appendingPathComponent("nand"))
         for (p, byte) in pages { try store.write(p, [UInt8](repeating: byte, count: N72NANDImage.stride)) }
         try store.sync()
         try Data("ibot".utf8).write(to: dir.appendingPathComponent("iBoot.bin"))

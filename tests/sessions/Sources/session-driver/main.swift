@@ -200,11 +200,23 @@ extension String {
         )
         // Preparation runs after hello, when the helper owns the storage lease.
         func configuration(_ hardware: DeviceInfo?) throws -> BootConfig {
-            let overlay = dir.appendingPathComponent("overlay")
+            // A managed device boots its record's overlay and NOR, as the app does: a stopped edit (1.x Tweaks, the
+            // SystemConfiguration step) publishes a generation whose storage lives under generations/<id>.
+            let device = dir.resolvingSymlinksInPath()
+            let recorded =
+                managedKey == nil
+                ? nil
+                : (try? Data(contentsOf: DeviceRecord.url(device))).flatMap {
+                    try? StorageRecordPaths(
+                        bytes: $0,
+                        relativeRoot: device.deletingLastPathComponent().deletingLastPathComponent()
+                    )
+                }
+            let overlay = recorded?.overlay ?? dir.appendingPathComponent("overlay")
             var offer = guestPackage
             let nor =
                 !profile.isKBoot || FileManager.default.fileExists(atPath: base.appendingPathComponent("nor.bin").path)
-                ? dir.appendingPathComponent("nor.bin") : nil
+                ? recorded?.writableNOR ?? dir.appendingPathComponent("nor.bin") : nil
             let prepared = try PreparedDeviceBoot.prepare(
                 board: profile,
                 base: base,

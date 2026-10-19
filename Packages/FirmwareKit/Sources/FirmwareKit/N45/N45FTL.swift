@@ -1,8 +1,9 @@
-// N45FTL: the 1.x legacy FTL read back from a page store (N45NAND's bank<N>/<page>.page base plus the emulator's
-// overlay of the same layout, blk<N>.erased markers honored), as the guest left it. The FTL's context is
-// openiBoot's s5l8900 FTLCxt (the structure N45NAND.ftlMeta writes): the map's four 0x46 pages listed at +0x38,
-// the log-offset pages at +0x110, the log table at +0x1A4 (20-byte entries: usn, vbn, lbn), the context blocks at
-// +0x312. The context moves: the FTL takes new context blocks from its free pool (a booted M68 had it in
+// N45FTL: the 1.x legacy FTL read back from a page store as the guest left it: an image store (PageNANDImage.s5l8900,
+// the device's live clone in the overlay when there is one), or a format 1 bank<N>/<page>.page base plus the
+// emulator's overlay of the same layout, blk<N>.erased markers honored. An erased page (every bit set) reads as none.
+// The FTL's context is openiBoot's s5l8900 FTLCxt (the structure N45NAND.ftlMeta writes): the map's four 0x46 pages
+// listed at +0x38, the log-offset pages at +0x110, the log table at +0x1A4 (20-byte entries: usn, vbn, lbn), the
+// context blocks at +0x312. The context moves: the FTL takes new context blocks from its free pool (a booted M68 had it in
 // virtual block 3), so the current one is found as the context-typed (0x43-0x4F) virtual block whose first page
 // has the lowest usnDec, and its last written page must be the context itself (0x43); anything else is an
 // unclean shutdown, which this reader refuses (that state needs FTL_Restore's scan).
@@ -18,20 +19,19 @@ public struct N45FTL {
     static let virtualBlocks = N45NAND.blocksPerBank - N45NAND.ftlStart
 
     public let banks: Int
-    let base: URL, overlay: URL?
+    let page: @Sendable (N45NAND.Page) -> (data: [UInt8], spare: [UInt8])?
     let map: [UInt16]
     let logTable: [UInt16: (vbn: UInt16, slot: Int)]
     let offsets: [UInt16]
 
     public init(base: URL, overlay: URL?) throws {
-        let fm = FileManager.default
-        let banks = (try fm.contentsOfDirectory(atPath: base.path)).filter { $0.hasPrefix("bank") }.count
-        guard banks > 0 else { throw FirmwareError(.unsupported, "\(base.path): no bank<N> page directories") }
+        let image = try PageNANDImage.s5l8900(at: base)
+        let banks = image.chips
         self.banks = banks
-        self.base = base
-        self.overlay = overlay
+        let page = try Self.reader(image, base: base, overlay: overlay)
+        self.page = page
         let sb = N45NAND.superblock(banks)
-        let read = { (vpn: Int) in Self.page(base, overlay, N45NAND.location(vpn: vpn, banks: banks)) }
+        let read = { (vpn: Int) in page(N45NAND.location(vpn: vpn, banks: banks)) }
 
         var newest: (usn: UInt32, vb: Int)?
         for vb in 0..<Self.virtualBlocks {
@@ -96,28 +96,17 @@ public struct N45FTL {
         return N45NAND.location(vpn: Int(map[lbn]) * sb + off, banks: banks)
     }
 
-    public func read(lpn: Int) -> (data: [UInt8], spare: [UInt8])? { Self.page(base, overlay, location(lpn: lpn)) }
+    public func read(lpn: Int) -> (data: [UInt8], spare: [UInt8])? { page(location(lpn: lpn)) }
 
-    /// A page as the guest reads it: the overlay's, else erased if the overlay erased its block, else the base's.
-    static func page(_ base: URL, _ overlay: URL?, _ p: N45NAND.Page) -> (data: [UInt8], spare: [UInt8])? {
-        let name = "bank\(p.bank)/\(p.page).page"
-        var bytes: Data?
-        if let overlay {
-            bytes = try? Data(contentsOf: overlay.appendingPathComponent(name))
-            if bytes == nil,
-                FileManager.default.fileExists(
-                    atPath: overlay.appendingPathComponent("bank\(p.bank)/blk\(p.page / N45NAND.pagesPerBlock).erased")
-                        .path
-                )
-            {
-                return nil
-            }
+    /// Pages as the guest reads them (PageNANDImage.reader); nil for an erased or unreadable page.
+    static func reader(_ image: PageNANDImage, base: URL, overlay: URL?) throws
+        -> @Sendable (N45NAND.Page) -> (data: [UInt8], spare: [UInt8])?
+    {
+        let read = try image.reader(base: base, overlay: overlay)
+        let blank = image.blankRecord
+        return { p in
+            guard let record = try? read(.init(chip: p.bank, page: p.page)), record != blank else { return nil }
+            return (Array(record[0..<N45NAND.page]), Array(record[N45NAND.page...]))
         }
-        guard let d = bytes ?? (try? Data(contentsOf: base.appendingPathComponent(name))) else { return nil }
-        var b = [UInt8](d)
-        if b.count < N45NAND.page + N45NAND.spare {
-            b += [UInt8](repeating: 0, count: N45NAND.page + N45NAND.spare - b.count)
-        }
-        return (Array(b[0..<N45NAND.page]), Array(b[N45NAND.page..<N45NAND.page + N45NAND.spare]))
     }
 }

@@ -120,14 +120,14 @@ struct N72NANDMigrationTests {
 
     @Test func imageRecordsReadBackAsWrittenAndHolesReadBlank() throws {
         let dir = try Fixtures.tempDir("n72-image").appendingPathComponent("nand")
-        let store = try N72NANDImage.Store(create: dir)
+        let store = try N72NANDImage.create(dir)
         let zero = [UInt8](repeating: 0, count: Self.stride)
         try store.write(Page(cs: 2, page: 7), zero)
         try store.write(Page(cs: 3, page: N72NANDImage.pagesPerChip - 1), Self.record(Self.block(4)))
         try store.sync()
         #expect(N72NANDImage.isImage(dir) && PreparedDeviceBoot.isImageStore(dir))
         #expect(try VolumeRebuild.board(of: dir) == .ipod)
-        let read = try N72NANDImage.Store(dir)
+        let read = try PageNANDImage.Store(dir)
         #expect(try read.read(Page(cs: 2, page: 7)) == zero)  // all zero is not the blank page
         #expect(try read.read(Page(cs: 3, page: N72NANDImage.pagesPerChip - 1)) == Self.record(Self.block(4)))
         #expect(try read.read(Page(cs: 0, page: 7)) == N72NANDImage.blankRecord)

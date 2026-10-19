@@ -21,6 +21,7 @@
 // the NOR graft, N88 keeps its own NOR and has its baseband node's identity filled with test values.
 
 import Foundation
+import HostRuntime
 
 public enum KBoot {
     public static let physBase: UInt32 = 0x4000_0000, dramSize: UInt32 = 0x1000_0000
@@ -40,10 +41,8 @@ public enum KBoot {
     // Measured on a real iPad 1 running 7B500: cpu/memory 0, bus/peripheral 100 MHz, fixed/timebase 24 MHz.
     static let cpuHz: UInt32 = 0, memHz: UInt32 = 0, busHz: UInt32 = 100_000_000, periphHz: UInt32 = 100_000_000
     static let fixedHz: UInt32 = 24_000_000, timebaseHz: UInt32 = 24_000_000, usbphyHz: UInt32 = 24_000_000
-    /// /arm-io/audio-complex ncoref-frequency (S5L8920/8922 only): iBoot fills it with PLL1's frequency, which LLB sets
-    /// to 24 MHz x 81 / 6 / 2 = 162 MHz (7E18 n88ap and 8C148 n18ap LLB). The kernel's audio complex divides by its
-    /// NCO's registers with it to find each I2S port's MCLK; left 0, every port reads 0 Hz.
-    static let ncorefHz: UInt32 = 162_000_000
+    /// /arm-io/audio-complex ncoref-frequency (S5L8920/8922 only): PLL1's 162 MHz, as iBoot fills it.
+    static let ncorefHz = PreparedDeviceBoot.ncorefHz
     static let clocks: [UInt32] = {
         var c = [UInt32](repeating: periphHz, count: 55)
         for (i, hz) in [0: timebaseHz, 5: cpuHz, 6: periphHz, 27: memHz, 32: busHz, 33: fixedHz] { c[i] = hz }

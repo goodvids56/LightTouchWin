@@ -3,7 +3,8 @@
 //
 // A switch is a preference key in the guest user's domain (GuestServices.writeDefaults, through the agent), a stock API
 // the agent calls (Core Animation's debug colors, UIKit's status bar overrides), a Developer Disk Image mounted through
-// lockdown, or a machine option of the next start (Time Machine). What a device asks for is its TweakSettings
+// lockdown, or a machine option of the next start (Time Machine). iPhone OS 1.x runs no agent: its keys are written
+// into the stopped device before its next start (DeviceTweaks.writeStopped). What a device asks for is its TweakSettings
 // (DeviceSettings.tweaks); TweakSettings.defaults says which keys that means on its firmware, and
 // TweakSettings.written which keys it has put there, so turning a tweak off removes only what it wrote.
 
@@ -50,14 +51,14 @@ public nonisolated enum Tweak: String, Codable, CaseIterable, Sendable {
     /// the decrypted root filesystems (1.0 to 7.1.2) carry the reader.
     public var versions: (first: String, last: String)? {
         switch self {
-        // SpringBoard reads both on every build from 1.0 to 7.1.2; 1.x has no guest tools to write them.
-        case .signalNumbers: ("2.0", "7.1.2")
+        // SpringBoard reads both on every build from 1.0 to 7.1.2.
+        case .signalNumbers: ("1.0", "7.1.2")
         // SpringBoard's status bar draws "9:42 AM" for SBFakeTime with no SBFakeTimeString from 1.0 to 4.0; 4.2.1
         // has neither the string nor SBFakeTimeString.
-        case .keynoteClock: ("2.0", "4.0.2")
-        // SpringBoard's demo keys to 4.1, then UIKit's +[UIStatusBarServer postStatusBarOverrideData:] from 4.2.1
-        // (StatusBarOverride has both).
-        case .cleanStatusBar: ("2.0", "7.1.2")
+        case .keynoteClock: ("1.0", "4.0.2")
+        // SpringBoard's demo keys to 4.1 (1.0's has no SBFakeCarrier, 1.1.4's has), then UIKit's
+        // +[UIStatusBarServer postStatusBarOverrideData:] from 4.2.1 (StatusBarOverride has both).
+        case .cleanStatusBar: ("1.0", "7.1.2")
         // UIKit reads com.apple.UIKit UIAnimationDragCoefficient from 3.0; 1.x and 2.x have the function and no key.
         case .slowAnimations: ("3.0", "7.1.2")
         // QuartzCore's CARenderServerSetDebugFlags, with the same CA_COLOR_* bits from 3.1.3 to 7.1.2.
@@ -65,9 +66,9 @@ public nonisolated enum Tweak: String, Codable, CaseIterable, Sendable {
         // UIKit reads it from 2.2 (2.1.1 doesn't), beside SoftBank's carrier and the Emoji regions, and 4.x
         // KeyboardSettings too; from 5.0 it is only a name in UIKit's (7.x TextInput's) list of keyboard preferences.
         case .emojiEverywhere: ("2.2", "4.3.5")
-        // MobileSafariSettings' Developer.plist: com.apple.mobilesafari ConsoleEnabled to 5.1.1, then
-        // com.apple.webinspectord RemoteInspectorEnabled (webinspectord, 6.1.6 and 7.x).
-        case .safariDebug: ("2.0", "7.1.2")
+        // MobileSafariSettings' Developer.plist: com.apple.mobilesafari ConsoleEnabled from 1.1 (1.0's MobileSafari
+        // has no console) to 5.1.1, then com.apple.webinspectord RemoteInspectorEnabled (webinspectord, 6.1.6 and 7.x).
+        case .safariDebug: ("1.1", "7.1.2")
         // Preferences shows Developer while /Developer/Library/PreferenceBundles/Developer Settings.bundle exists
         // (4.0 to 7.1.2); the Developer Disk Images carry that bundle from 4.2. DeviceTweaks also needs the app's
         // image for the version (DeveloperDiskImage).
@@ -78,20 +79,40 @@ public nonisolated enum Tweak: String, Codable, CaseIterable, Sendable {
 
     /// Whether a device with `version` can have it.
     public func isAvailable(version: String, guestTools: Bool, clockPinned: Bool) -> Bool {
-        if self == .timeMachine { return !clockPinned }
-        if let (first, last) = versions,
-            version.compare(first, options: .numeric) == .orderedAscending
-                || version.compare(last, options: .numeric) == .orderedDescending
-        {
-            return false
+        unavailable(version: version, guestTools: guestTools, clockPinned: clockPinned) == nil
+    }
+
+    /// Why a device with `version` can't have it, in a line; nil where it can.
+    public func unavailable(version: String, guestTools: Bool, clockPinned: Bool) -> String? {
+        if self == .timeMachine { return clockPinned ? "This beta keeps its own clock." : nil }
+        if let (first, last) = versions {
+            if TweakSettings.before(version, first) { return "Needs \(Self.system(first)) \(first) or later." }
+            if version.compare(last, options: .numeric) == .orderedDescending {
+                return "Only up to \(Self.system(last)) \(last)."
+            }
         }
         if self == .cleanStatusBar, !StatusBarStyle.takesKeys(version: version),
             StatusBarOverride.layout(version: version) == nil
         {
-            return false
+            return "Not mapped for this version’s status bar."
         }
-        return guestTools
+        // 1.x runs no guest tools: every switch it has is a preference key, written into the stopped device
+        // (DeviceTweaks.writeStopped).
+        return guestTools || Self.writtenWhileStopped(version: version) ? nil : "Needs the guest tools."
     }
+
+    /// What the row says under its caption on `version`: why it's off, or when a change takes effect where that
+    /// isn't right away.
+    public func note(version: String, guestTools: Bool, clockPinned: Bool) -> String? {
+        if let why = unavailable(version: version, guestTools: guestTools, clockPinned: clockPinned) { return why }
+        return self != .timeMachine && Self.writtenWhileStopped(version: version)
+            ? "Takes effect at the next start." : nil
+    }
+
+    /// iPhone OS 1.x: no agent, so the keys go into the device while it is stopped.
+    public static func writtenWhileStopped(version: String) -> Bool { TweakSettings.before(version, "2.0") }
+
+    static func system(_ version: String) -> String { TweakSettings.before(version, "4.0") ? "iPhone OS" : "iOS" }
 
     /// The row's caption on `version`: exactly what it changes.
     public func caption(version: String) -> String {
@@ -99,9 +120,11 @@ public nonisolated enum Tweak: String, Codable, CaseIterable, Sendable {
         case .signalNumbers: "SBShowRSSI, SBShowGSMRSSI"
         case .keynoteClock: "SBFakeTime"
         case .cleanStatusBar:
-            TweakSettings.before(version, "4.2")
-                ? "SBFakeTime, SBFakeTimeString, SBFakeCarrier, SBFakeBars"
-                : "+[UIStatusBarServer postStatusBarOverrideData:]"
+            !TweakSettings.before(version, "4.2")
+                ? "+[UIStatusBarServer postStatusBarOverrideData:]"
+                : StatusBarStyle.takesCarrier(version: version)
+                    ? "SBFakeTime, SBFakeTimeString, SBFakeCarrier, SBFakeBars"
+                    : "SBFakeTime, SBFakeTimeString, SBFakeBars"
         case .slowAnimations: "UIAnimationDragCoefficient"
         case .coreAnimationColors: "CARenderServerSetDebugFlags"
         case .emojiEverywhere: "KeyboardEmojiEverywhere"
@@ -215,7 +238,7 @@ public nonisolated struct TweakSettings: Codable, Equatable, Sendable {
             keys += ["SBShowRSSI", "SBShowGSMRSSI"].map { GuestDefault("com.apple.springboard", $0, .bool(true)) }
         }
         let marketing = applies(.cleanStatusBar, version: version) && StatusBarStyle.takesKeys(version: version)
-        if marketing { keys += statusBar.keys() }
+        if marketing { keys += statusBar.keys(version: version) }
         if applies(.keynoteClock, version: version), !keys.contains(where: { $0.key == "SBFakeTime" }) {
             keys.append(GuestDefault("com.apple.springboard", "SBFakeTime", .bool(true)))
         }
