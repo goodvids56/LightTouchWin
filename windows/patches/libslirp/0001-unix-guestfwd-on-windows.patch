@@ -1,0 +1,69 @@
+diff -ru a/src/misc.c b/src/misc.c
+--- a/src/misc.c
++++ b/src/misc.c
+@@ -289,6 +289,53 @@
+     slirp_register_poll_socket(so);
+ 
+     return 1;
++#elif defined(_WIN32)
++    /*
++     * Windows: the forward's "socket" is HOST:PORT on TCP (Light Touch for
++     * Windows serves its web proxy on loopback), one connection per guest
++     * connection as a Unix socket gives elsewhere.
++     */
++    struct sockaddr_in sa;
++    char host[64];
++    const char *colon = strrchr(unixpath, ':');
++    slirp_os_socket s;
++
++    DEBUG_CALL("open_unix");
++    DEBUG_ARG("so = %p", so);
++    DEBUG_ARG("unixpath = %s", unixpath);
++
++    memset(&sa, 0, sizeof(sa));
++    sa.sin_family = AF_INET;
++    if (!colon || colon == unixpath || (size_t)(colon - unixpath) >= sizeof(host)) {
++        g_critical("Bad forward address: %s", unixpath);
++        return 0;
++    }
++    memcpy(host, unixpath, colon - unixpath);
++    host[colon - unixpath] = '\0';
++    sa.sin_addr.s_addr = inet_addr(host);
++    sa.sin_port = htons((uint16_t)atoi(colon + 1));
++    if (sa.sin_addr.s_addr == INADDR_NONE || !sa.sin_port) {
++        g_critical("Bad forward address: %s", unixpath);
++        return 0;
++    }
++
++    s = slirp_socket(AF_INET, SOCK_STREAM, 0);
++    if (not_valid_socket(s)) {
++        g_critical("open_unix(): %d", WSAGetLastError());
++        return 0;
++    }
++
++    if (connect(s, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
++        g_critical("open_unix(): %d", WSAGetLastError());
++        closesocket(s);
++        return 0;
++    }
++
++    so->s = s;
++    slirp_set_nonblock(so->s);
++    slirp_register_poll_socket(so);
++
++    return 1;
+ #else
+ #ifdef GLIB_UNUSED_PARAM
+     GLIB_UNUSED_PARAM(so);
+diff -ru a/src/slirp.c b/src/slirp.c
+--- a/src/slirp.c
++++ b/src/slirp.c
+@@ -1646,7 +1646,7 @@
+ int slirp_add_unix(Slirp *slirp, const char *unixsock,
+                    struct in_addr *guest_addr, int guest_port)
+ {
+-#ifdef G_OS_UNIX
++#if defined(G_OS_UNIX) || defined(_WIN32)
+     if (!check_guestfwd(slirp, guest_addr, guest_port)) {
+         return -1;
+     }

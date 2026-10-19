@@ -1,5 +1,10 @@
 # Contributing to Light Touch
 
+> **LightTouchWin is a fork.** The Windows build this fork adds lives in `windows/` and is described in
+> [windows/README.md](windows/README.md): it cross-compiles from Linux and needs no Mac. Everything below is the
+> upstream Mac app's guide, kept as it is so the fork can follow [LightTouchMac](https://github.com/samhenrigold/LightTouchMac);
+> building or testing the Mac app needs a Mac with Xcode, and preparing devices with `firmwarekit` (below) still does.
+
 Light Touch is a native macOS (AppKit) app that runs a library of emulated legacy iOS devices.
 The device catalog covers the iPhone (m68ap), iPhone 3GS (n88ap), iPhone 4 (n90ap), iPod touch 1G to 4G
 (n45ap, n72ap, n18ap, n81ap) and iPad (k48ap). Each device is prepared

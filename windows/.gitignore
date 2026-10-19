@@ -1,0 +1,5 @@
+# dotnet and windows/build.sh output
+bin/
+obj/
+/dist/
+/work/

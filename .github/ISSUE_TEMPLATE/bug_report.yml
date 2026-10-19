@@ -1,13 +1,13 @@
 name: Bug report
-description: Something doesn't work the way it should
+description: Something doesn't work the way it should in Light Touch for Windows
 labels: [bug]
 body:
   - type: input
     id: version
     attributes:
-      label: Light Touch version and build
-      description: From Light Touch ▸ About Light Touch, including the build number in parentheses. Reports without the build can't be looked into.
-      placeholder: 1.0 (1447)
+      label: Light Touch for Windows version
+      description: From Help ▸ About Light Touch for Windows, or the release you downloaded.
+      placeholder: 0.1.0
     validations:
       required: true
   - type: input
@@ -18,18 +18,10 @@ body:
     validations:
       required: true
   - type: input
-    id: mac
+    id: pc
     attributes:
-      label: Mac and macOS version
-      description: For example "MacBook Air M2, macOS 15.1".
-    validations:
-      required: true
-  - type: textarea
-    id: info
-    attributes:
-      label: Light Touch info
-      description: Choose Help ▸ Copy Bug Report Info in Light Touch, then paste here. It names the build, your Mac and the device's setup, with no personal details. Required.
-      placeholder: Paste the block here.
+      label: PC and Windows version
+      description: For example "ThinkPad X1 Carbon, Windows 11 24H2".
     validations:
       required: true
   - type: textarea
@@ -40,7 +32,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: diagnostics
+    id: logs
     attributes:
-      label: Diagnostics
-      description: Help ▸ Export Diagnostics saves a zip of the logs, with personal details removed. Attach it here.
+      label: Logs
+      description: In Light Touch, select the device and choose Device ▸ Show Logs. Attach emulator.log and serial.log.

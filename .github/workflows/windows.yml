@@ -1,0 +1,97 @@
+# Light Touch for Windows: the emulator, the USB services and the media tools cross-built with mingw-w64
+# (windows/scripts/build-qemu.sh, build-usb.sh and build-media.sh, in Fedora as windows/Dockerfile), the app's tests and
+# publish with the .NET 8 SDK, and the zip. A v* tag also makes a release.
+name: Windows build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+    paths:
+      - "windows/**"
+      - "build-support/sources.json"
+      - "build-support/dependencies.json"
+      - "LightTouchMac/Resources/firmware-catalog.json"
+      - ".github/workflows/windows.yml"
+  pull_request:
+    paths:
+      - "windows/**"
+      - "build-support/sources.json"
+      - "build-support/dependencies.json"
+      - "LightTouchMac/Resources/firmware-catalog.json"
+      - ".github/workflows/windows.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator:
+    runs-on: ubuntu-latest
+    container: quay.io/fedora/fedora:42
+    steps:
+      - name: Install the mingw-w64 toolchain
+        run: >
+          dnf install -y mingw64-gcc mingw64-gcc-c++ mingw64-glib2 mingw64-pixman mingw64-zlib mingw64-openssl
+          mingw64-pkg-config mingw64-curl meson ninja-build python3 git curl jq bzip2 xz patch flex bison diffutils
+          findutils make nasm gcc autoconf automake libtool which perl-FindBin perl-IPC-Cmd perl-File-Compare
+          perl-File-Copy perl-Time-Piece perl-lib
+      - uses: actions/checkout@v4
+      - name: Trust the checkout
+        run: git config --global --add safe.directory '*'
+      # The FFmpeg and libslirp builds and the qemu-ios checkout; the emulator's own tree is rebuilt from it.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            windows/work/emulator-build
+            windows/work/usb-build/downloads
+            windows/work/media-build/downloads
+            windows/work/media-build/lzfse
+          key: emulator-${{ hashFiles('build-support/sources.json', 'build-support/dependencies.json', 'windows/patches/**', 'windows/scripts/*.sh', 'windows/usbmuxd/**') }}
+      - name: Build qemu-arm.dll
+        run: WORK_DIR=windows/work/emulator-build windows/scripts/build-qemu.sh windows/work/emulator
+      - name: Build usbmuxd and libimobiledevice
+        run: WORK_DIR=windows/work/usb-build windows/scripts/build-usb.sh windows/work/emulator
+      - name: Build lzfse.dll, ffmpeg.exe and ffprobe.exe
+        run: WORK_DIR=windows/work/media-build windows/scripts/build-media.sh windows/work/emulator
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emulator
+          path: windows/work/emulator
+
+  app:
+    needs: emulator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/download-artifact@v4
+        with:
+          name: emulator
+          path: windows/work/emulator
+      - name: Test, publish and zip
+        run: windows/build.sh --app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LightTouch-windows-x64
+          path: |
+            windows/dist/LightTouch-windows-x64.zip
+            windows/dist/LightTouch-windows-x64.zip.sha256
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: app
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LightTouch-windows-x64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            LightTouch-windows-x64.zip
+            LightTouch-windows-x64.zip.sha256

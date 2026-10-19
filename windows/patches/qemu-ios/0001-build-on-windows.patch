@@ -1,0 +1,411 @@
+diff --git a/contrib/ios-app/qemu-ios-ui.c b/contrib/ios-app/qemu-ios-ui.c
+index 33ae91d..6d3c8a1 100644
+--- a/contrib/ios-app/qemu-ios-ui.c
++++ b/contrib/ios-app/qemu-ios-ui.c
+@@ -46,7 +46,9 @@ static void ios_sequence_reset(void *opaque)
+ #include "hw/arm/ipod_touch_pcf50633_pmu.h"
+ #include "hw/arm/ipod_touch_lcd.h"
+ 
++#ifndef _WIN32
+ #include <sys/resource.h>
++#endif
+ 
+ #include "qapi/qapi-commands-migration.h"
+ #include "qapi/qapi-commands-misc.h"
+@@ -146,7 +148,9 @@ static void ios_report_first_lit_frame(const uint8_t *bgra, int w, int h)
+ 
+     /* A handful of stray pixels is noise; a drawn screen is nothing like it. */
+     if (lit * 64 > pixels / 100) {
++#ifndef _WIN32
+         struct rusage ru;
++#endif
+         double cpu = 0;
+ 
+         reported = true;
+@@ -158,10 +162,19 @@ static void ios_report_first_lit_frame(const uint8_t *bgra, int w, int h)
+          * same moment. CPU seconds for identical guest work is the honest
+          * measure of interpreter throughput.
+          */
++#ifdef _WIN32
++        FILETIME created, exited, kernel, user;
++        if (GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user)) {
++            /* 100 ns units */
++            cpu = (((uint64_t)kernel.dwHighDateTime << 32 | kernel.dwLowDateTime)
++                   + ((uint64_t)user.dwHighDateTime << 32 | user.dwLowDateTime)) / 1e7;
++        }
++#else
+         if (getrusage(RUSAGE_SELF, &ru) == 0) {
+             cpu = ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6
+                 + ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1e6;
+         }
++#endif
+ 
+         fprintf(stderr, "[boot] first lit frame after %.1f s wall, %.1f s cpu\n",
+                 (qemu_clock_get_ns(QEMU_CLOCK_REALTIME) - first_capture_ns)
+diff --git a/contrib/macos-app/qemu-macos-extras.c b/contrib/macos-app/qemu-macos-extras.c
+index 62c2a72..b5f85dc 100644
+--- a/contrib/macos-app/qemu-macos-extras.c
++++ b/contrib/macos-app/qemu-macos-extras.c
+@@ -31,8 +31,10 @@
+ 
+ #include "qemu-main.h"
+ 
++#ifndef _WIN32
+ #include <dlfcn.h>
+ #include <mach-o/loader.h>
++#endif
+ 
+ #include "qemu-macos-extras.h"
+ #include "hw/misc/ios_vibrator.h"
+@@ -770,6 +772,20 @@ const char *qemu_ios_build_id(void)
+     static char identity[33];
+     static gsize ready;
+     if (g_once_init_enter(&ready)) {
++#ifdef _WIN32
++        /* The PE image's link stamp and size: what the loaded DLL is, as LC_UUID is for a Mach-O. */
++        HMODULE module = NULL;
++        if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
++                               (LPCSTR)qemu_ios_build_id, &module) && module) {
++            const IMAGE_DOS_HEADER *dos = (const void *)module;
++            const IMAGE_NT_HEADERS *nt = (const void *)((const uint8_t *)module + dos->e_lfanew);
++            snprintf(identity, sizeof(identity), "%08lx%08lx%08lx%08lx",
++                     (unsigned long)nt->FileHeader.TimeDateStamp,
++                     (unsigned long)nt->OptionalHeader.SizeOfImage,
++                     (unsigned long)nt->OptionalHeader.CheckSum,
++                     (unsigned long)nt->OptionalHeader.AddressOfEntryPoint);
++        }
++#else
+         Dl_info info;
+         if (dladdr((void *)qemu_ios_build_id, &info) && info.dli_fbase) {
+             const struct mach_header_64 *header = info.dli_fbase;
+@@ -789,6 +805,7 @@ const char *qemu_ios_build_id(void)
+                 }
+             }
+         }
++#endif
+         g_once_init_leave(&ready, 1);
+     }
+     return identity[0] ? identity : NULL;
+diff --git a/hw/arm/ipod_touch_fmss.c b/hw/arm/ipod_touch_fmss.c
+index fd22893..345f3da 100644
+--- a/hw/arm/ipod_touch_fmss.c
++++ b/hw/arm/ipod_touch_fmss.c
+@@ -7,7 +7,38 @@
+ #include "qapi/error.h"
+ #include "system/runstate.h"
+ #include "system/address-spaces.h"
++#ifdef _WIN32
++/* A read-only view of the whole file; the view keeps the file open after its descriptor closes, as mmap does. */
++static void *fmss_map_readonly(int fd)
++{
++    HANDLE mapping = CreateFileMappingA((HANDLE)_get_osfhandle(fd), NULL, PAGE_READONLY, 0, 0, NULL);
++    void *view;
++
++    if (!mapping) {
++        return NULL;
++    }
++    view = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0);
++    CloseHandle(mapping);
++    return view;
++}
++#define FMSS_MAP_FAILED NULL
++#define fmss_unmap(p, size) UnmapViewOfFile(p)
++/* A page file replaces its older self, as rename(2) does; the CRT's rename refuses an existing target. */
++static int fmss_rename(const char *from, const char *to)
++{
++    if (MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
++        return 0;
++    }
++    errno = GetLastError() == ERROR_ACCESS_DENIED ? EACCES : EIO;
++    return -1;
++}
++#define rename(from, to) fmss_rename(from, to)
++#else
+ #include <sys/mman.h>
++#define fmss_map_readonly(fd) mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)
++#define FMSS_MAP_FAILED MAP_FAILED
++#define fmss_unmap(p, size) munmap(p, size)
++#endif
+ #include <sys/stat.h>
+ #include "trace.h"
+ #include "hw/trace-printf.h"
+@@ -708,15 +739,15 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+     if (fd < 0) {
+         return;
+     }
+-    p = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
++    p = fmss_map_readonly(fd);
+     close(fd);                        /* the mapping keeps its own reference */
+-    if (p == MAP_FAILED) {
++    if (p == FMSS_MAP_FAILED) {
+         return;
+     }
+ 
+     if ((size_t)st.st_size < 24 || memcmp(p, magic, sizeof(magic)) != 0) {
+         fprintf(stderr, "[fmss] %s is not a packed NAND image\n", s->nand_path);
+-        munmap((void *)p, st.st_size);
++        fmss_unmap((void *)p, st.st_size);
+         return;
+     }
+ 
+@@ -726,7 +757,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+         fprintf(stderr, "[fmss] %s has %u+%u byte pages, expected %u+%u\n",
+                 s->nand_path, page_size, spare_size,
+                 NAND_BYTES_PER_PAGE, NAND_BYTES_PER_SPARE);
+-        munmap((void *)p, st.st_size);
++        fmss_unmap((void *)p, st.st_size);
+         return;
+     }
+ 
+@@ -746,7 +777,7 @@ static void fmss_try_map_packed(IPodTouchFMSSState *s)
+         fprintf(stderr, "[fmss] packed NAND %s is truncated (index wants %zu of "
+                 "%zu bytes); ignoring it\n", s->nand_path, index_bytes,
+                 (size_t)st.st_size - 24);
+-        munmap(p, st.st_size);
++        fmss_unmap((void *)p, st.st_size);
+         return;
+     }
+ 
+diff --git a/hw/arm/ipod_touch_nor_spi.c b/hw/arm/ipod_touch_nor_spi.c
+index ac80569..9d17be4 100644
+--- a/hw/arm/ipod_touch_nor_spi.c
++++ b/hw/arm/ipod_touch_nor_spi.c
+@@ -111,6 +111,31 @@ static void initialize_nor(IPodTouchNORSPIState *s)
+     }
+ }
+ 
++#ifdef _WIN32
++/* Windows' stat() has no inode (st_ino is 0 for every file): the volume serial and file index say it. */
++static bool nor_same_file(const char *a, const char *b)
++{
++    BY_HANDLE_FILE_INFORMATION ia, ib;
++    bool same = false;
++    HANDLE ha = CreateFileA(a, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
++                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
++    HANDLE hb = CreateFileA(b, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
++                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
++    if (ha != INVALID_HANDLE_VALUE && hb != INVALID_HANDLE_VALUE &&
++        GetFileInformationByHandle(ha, &ia) && GetFileInformationByHandle(hb, &ib)) {
++        same = ia.dwVolumeSerialNumber == ib.dwVolumeSerialNumber &&
++               ia.nFileIndexHigh == ib.nFileIndexHigh && ia.nFileIndexLow == ib.nFileIndexLow;
++    }
++    if (ha != INVALID_HANDLE_VALUE) {
++        CloseHandle(ha);
++    }
++    if (hb != INVALID_HANDLE_VALUE) {
++        CloseHandle(hb);
++    }
++    return same;
++}
++#endif
++
+ void ipod_touch_nor_spi_open_overlay(IPodTouchNORSPIState *s, const char *path, Error **errp)
+ {
+     struct stat base, writable;
+@@ -125,7 +150,11 @@ void ipod_touch_nor_spi_open_overlay(IPodTouchNORSPIState *s, const char *path,
+             error_setg_errno(errp, errno, "base NOR image must exist");
+             return;
+         }
++#ifdef _WIN32
++        if (nor_same_file(s->nor_path, path)) {
++#else
+         if (base.st_dev == writable.st_dev && base.st_ino == writable.st_ino) {
++#endif
+             error_setg(errp, "nor-rw must be a private copy, not the base NOR image");
+             return;
+         }
+diff --git a/hw/arm/ipod_touch_tcp_usb.c b/hw/arm/ipod_touch_tcp_usb.c
+index a1a91b2..5455171 100644
+--- a/hw/arm/ipod_touch_tcp_usb.c
++++ b/hw/arm/ipod_touch_tcp_usb.c
+@@ -34,12 +34,15 @@
+  */
+ #include "hw/arm/ipod_touch_tcp_usb.h"
+ 
++#include "qemu/sockets.h"
++#ifndef _WIN32
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+ #include <sys/un.h>
+ #include <netdb.h>
++#endif
+ #include "trace.h"
+ #include "hw/trace-printf.h"
+ 
+@@ -199,9 +202,9 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 		/* fall through */
+ 	case tcp_usb_read_request:
+ 		if (state->amount_done < sizeof(*state->header)) {
+-			ret = read(state->socket,
++			ret = recv(state->socket,
+ 					((char *)state->header) + state->amount_done,
+-					sizeof(*state->header) - state->amount_done);
++					sizeof(*state->header) - state->amount_done, 0);
+ 			switch (tcp_usb_classify(ret, "reading request header")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -229,7 +232,7 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 			size_t len = tcp_usb_payload_len(state->header);
+ 			size_t got = state->amount_done - sizeof(*state->header);
+ 
+-			ret = read(state->socket, state->buffer + got, len - got);
++			ret = recv(state->socket, state->buffer + got, len - got, 0);
+ 			switch (tcp_usb_classify(ret, "reading request data")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -265,9 +268,9 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 		/* fall through */
+ 	case tcp_usb_write_response:
+ 		if (state->amount_done < sizeof(*state->header)) {
+-			ret = write(state->socket,
++			ret = send(state->socket,
+ 					((char *)state->header) + state->amount_done,
+-					sizeof(*state->header) - state->amount_done);
++					sizeof(*state->header) - state->amount_done, 0);
+ 			switch (tcp_usb_classify(ret, "writing response header")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -293,7 +296,7 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 			size_t len = tcp_usb_payload_len(state->header);
+ 			size_t sent = state->amount_done - sizeof(*state->header);
+ 
+-			ret = write(state->socket, state->buffer + sent, len - sent);
++			ret = send(state->socket, state->buffer + sent, len - sent, 0);
+ 			switch (tcp_usb_classify(ret, "writing response data")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -320,9 +323,9 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 
+ 	case tcp_usb_write_request:
+ 		if (state->amount_done < sizeof(*state->header)) {
+-			ret = write(state->socket,
++			ret = send(state->socket,
+ 					((char *)state->header) + state->amount_done,
+-					sizeof(*state->header) - state->amount_done);
++					sizeof(*state->header) - state->amount_done, 0);
+ 			switch (tcp_usb_classify(ret, "writing request header")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -345,7 +348,7 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 			size_t len = tcp_usb_payload_len(state->header);
+ 			size_t sent = state->amount_done - sizeof(*state->header);
+ 
+-			ret = write(state->socket, state->buffer + sent, len - sent);
++			ret = send(state->socket, state->buffer + sent, len - sent, 0);
+ 			switch (tcp_usb_classify(ret, "writing request data")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -370,9 +373,9 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 		/* fall through */
+ 	case tcp_usb_read_response:
+ 		if (state->amount_done < sizeof(*state->header)) {
+-			ret = read(state->socket,
++			ret = recv(state->socket,
+ 					((char *)state->header) + state->amount_done,
+-					sizeof(*state->header) - state->amount_done);
++					sizeof(*state->header) - state->amount_done, 0);
+ 			switch (tcp_usb_classify(ret, "reading response header")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -395,7 +398,7 @@ static void tcp_usb_pump(tcp_usb_state_t *state, int _can_read, int _can_write)
+ 			size_t len = tcp_usb_payload_len(state->header);
+ 			size_t got = state->amount_done - sizeof(*state->header);
+ 
+-			ret = read(state->socket, state->buffer + got, len - got);
++			ret = recv(state->socket, state->buffer + got, len - got, 0);
+ 			switch (tcp_usb_classify(ret, "reading response data")) {
+ 			case TCP_USB_IO_AGAIN:
+ 				return;
+@@ -504,7 +507,7 @@ int tcp_usb_connect(tcp_usb_state_t *_state, const char *_host, uint32_t _port)
+ 
+ 	/* Every control transfer is a round trip; Nagle would add 40ms to each. */
+ 	int one = 1;
+-	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
++	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (const void *)&one, sizeof(one));
+ 
+ connected:
+ 
+@@ -513,8 +516,7 @@ connected:
+ 	_state->state = tcp_usb_idle;
+ 	_state->amount_done = 0;
+ 
+-	int flags = fcntl(fd, F_GETFL, 0);
+-	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
++	qemu_set_blocking(fd, false, NULL);
+ 	/* Read-only to start; the write handler is armed on demand (see the note on
+ 	 * tcp_usb_callback) only while a write is pending, or the loop spins. */
+ 	qemu_set_fd_handler(fd, tcp_usb_read_callback, NULL, _state);
+diff --git a/hw/arm/s5l8930_iop.c b/hw/arm/s5l8930_iop.c
+index 10ec105..971c713 100644
+--- a/hw/arm/s5l8930_iop.c
++++ b/hw/arm/s5l8930_iop.c
+@@ -1656,6 +1656,7 @@ static void s5l8930_iop_realize(DeviceState *dev, Error **errp)
+     }
+     /* Make the fixed filenames/format marker durable before any ownership
+      * can reference them. Operations never create new entries afterward. */
++#ifndef _WIN32
+     const char *write_dir = s->overlay_dir ? s->overlay_dir : s->nand_dir;
+     int dirfd = open(write_dir, O_RDONLY | O_DIRECTORY);
+     if (dirfd < 0 || fsync(dirfd) < 0) {
+@@ -1666,6 +1667,7 @@ static void s5l8930_iop_realize(DeviceState *dev, Error **errp)
+         return;
+     }
+     close(dirfd);
++#endif
+     s->vm_state_entry = qemu_add_vm_change_state_handler(iop_vm_state, s);
+ }
+ 
+diff --git a/hw/misc/ios_baseband_core.c b/hw/misc/ios_baseband_core.c
+index 17fc118..89440bf 100644
+--- a/hw/misc/ios_baseband_core.c
++++ b/hw/misc/ios_baseband_core.c
+@@ -1057,8 +1057,17 @@ static void nitz_report(IosBbCore *bb)
+     }
+     gmtime_r(&secs, &utc);
+     localtime_r(&secs, &local);
++#ifdef _WIN32
++    GDateTime *zoned = g_date_time_new_from_unix_local(secs);
++    long gmtoff = zoned ? (long)(g_date_time_get_utc_offset(zoned) / G_TIME_SPAN_SECOND) : 0;
++    if (zoned) {
++        g_date_time_unref(zoned);
++    }
++#else
++    long gmtoff = local.tm_gmtoff;
++#endif
+     chan_printf(bb, bb->ctzr_ch, "\r\n+CTZV: %ld,\"%02d/%02d/%02d,%02d:%02d:%02d\"\r\n",
+-                (long)(local.tm_gmtoff / 900), utc.tm_year % 100, utc.tm_mon + 1, utc.tm_mday,
++                gmtoff / 900, utc.tm_year % 100, utc.tm_mon + 1, utc.tm_mday,
+                 utc.tm_hour, utc.tm_min, utc.tm_sec);
+ }
+ 
+diff --git a/include/system/os-win32.h b/include/system/os-win32.h
+index 22d72ba..eb8fc18 100644
+--- a/include/system/os-win32.h
++++ b/include/system/os-win32.h
+@@ -134,6 +134,24 @@ static inline void os_setup_limits(void)
+ 
+ #define fsync _commit
+ 
++/* mingw's CRT has no memmem; the iOS boards search firmware images with it. */
++static inline void *memmem(const void *haystack, size_t haystack_len,
++                           const void *needle, size_t needle_len)
++{
++    const char *h = haystack;
++    size_t i;
++
++    if (needle_len == 0) {
++        return (void *)haystack;
++    }
++    for (i = 0; i + needle_len <= haystack_len; i++) {
++        if (h[i] == *(const char *)needle && memcmp(h + i, needle, needle_len) == 0) {
++            return (void *)(h + i);
++        }
++    }
++    return NULL;
++}
++
+ #if !defined(lseek)
+ # define lseek _lseeki64
+ #endif
