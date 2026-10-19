@@ -4,7 +4,7 @@ name: Windows build
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
     tags: ["v*"]
     paths: ["windows/**", "build-support/sources.json", ".github/workflows/windows.yml"]
   pull_request:
