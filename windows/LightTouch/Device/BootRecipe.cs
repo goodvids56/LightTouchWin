@@ -47,12 +47,13 @@ internal static class BootRecipe
     }
 
     /// The iPod touch 1G and the original iPhone (-M iPod-Touch-1G / iPhone-2G): the S5L8900 bootrom and iBoot,
-    /// the NAND under a page overlay and the NOR as a pflash drive on the writable copy.
+    /// the NAND (an image store's live copy, or a page directory under a page overlay) and the NOR as a pflash drive
+    /// on the writable copy.
     public static List<string> IPod1G(PreparedDevice d, string machineName, bool hasCellular, BootOptions o, string? netdev)
     {
         var machine =
             $"{machineName},bootrom={Escape(d.BootRom)},iboot={Escape(d.BootFile)}"
-            + $",nand={Escape(d.Nand)},nand-overlay={Escape(d.Overlay)}"
+            + $",nand={Escape(d.Nand)}" + (d.NandOverlay is { } overlay ? $",nand-overlay={Escape(overlay)}" : "")
             + (o.Network ? "" : ",wifi=off") + Options(d.Machine);
         var argv = new List<string>
         {

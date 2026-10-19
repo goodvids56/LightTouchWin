@@ -55,6 +55,7 @@ internal sealed class PreparedDevice
                 + "Light Touch for Mac (File > Import from Light Touch for Mac) or copy it into the assets folder.",
                 bootRom);
         }
+        if (board.SoC == SoC.S5L8920 && boot == "kboot.bin") bootFile = AudioClockBoot(bootFile, overlay);
         string? nandOverlay = overlay;
         if (IsImageStore(nand))
         {
@@ -85,6 +86,49 @@ internal sealed class PreparedDevice
         };
     }
 
+    /// /arm-io/audio-complex ncoref-frequency (S5L8920/8922): iBoot fills it with PLL1's 162 MHz, which the kernel's
+    /// audio complex divides to find each I2S port's MCLK; left 0, iPhone OS 3's mediaserverd finds no audio device.
+    public const uint NcorefHz = 162_000_000;
+
+    /// The kboot.bin a 3GS or iPod touch 3G boots. One prepared before FirmwareKit filled ncoref-frequency has the
+    /// IPSW's 0: the first boot writes a copy with the value set into the overlay, read back before it's used, and later
+    /// boots use that copy. The base stays as it was; Erase empties the overlay and the next boot writes it again.
+    public static string AudioClockBoot(string kboot, string overlay)
+    {
+        var repaired = Path.Combine(overlay, "kboot.bin");
+        if (File.Exists(repaired)) return repaired;
+        var image = File.ReadAllBytes(kboot);
+        if (NcorefOffset(image) is not { } at || image.AsSpan(at, 4).ContainsAnyExcept((byte)0)) return kboot;
+        BitConverter.TryWriteBytes(image.AsSpan(at, 4), NcorefHz);
+        var staged = Path.Combine(overlay, $".kboot-{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllBytes(staged, image);
+            if (!File.ReadAllBytes(staged).AsSpan().SequenceEqual(image)) throw new IOException($"Couldn't write {staged}");
+            File.Move(staged, repaired);
+        }
+        finally
+        {
+            File.Delete(staged);
+        }
+        Console.Error.WriteLine($"LightTouch: kboot.bin's ncoref-frequency was 0; booting {repaired}");
+        return repaired;
+    }
+
+    /// Where the device tree property's 4-byte value is (a 32-byte name, a length of 4, the value), when it occurs
+    /// exactly once.
+    public static int? NcorefOffset(byte[] image)
+    {
+        var key = new byte[36];
+        "ncoref-frequency"u8.CopyTo(key);
+        key[32] = 4;
+        var first = image.AsSpan().IndexOf(key);
+        if (first < 0) return null;
+        var end = first + key.Length;
+        if (image.AsSpan(end).IndexOf(key) >= 0 || end + 4 > image.Length) return null;
+        return end;
+    }
+
     /// An image store (geometry.json nand-xor-ff-v2 or nand-xor-blank-v2) needs no page overlay: the device's NAND is
     /// a copy of the base's, `overlay\nand`, which the emulator writes in place. Erase removes it.
     public static bool IsImageStore(string nand)
@@ -102,7 +146,7 @@ internal sealed class PreparedDevice
     {
         var live = LiveNand(overlay);
         // Page files an older build wrote over this base: never booted as an image, and never silently dropped.
-        foreach (var name in new[] { "bus0-ce0.pages", "bus0-ce0.dirty", "cs0" })
+        foreach (var name in new[] { "bus0-ce0.pages", "bus0-ce0.dirty", "cs0", "bank0" })
         {
             if (File.Exists(Path.Combine(overlay, name)) || Directory.Exists(Path.Combine(overlay, name)))
             {

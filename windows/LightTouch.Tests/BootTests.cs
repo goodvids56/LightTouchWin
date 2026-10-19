@@ -186,4 +186,67 @@ public sealed class BootTests : IDisposable
         Directory.CreateDirectory(Path.Combine(tmp, "data", "overlay", "cs0"));
         Assert.Throws<InvalidDataException>(() => Prepare(Board.N72, dir));
     }
+
+    /// The 1.x boards' image store boots its live copy with no nand-overlay; a format 1 bank directory left in the
+    /// overlay over it is refused (HostRuntime's m68ImageStoreBootsItsLiveCloneWithoutAnOverlay).
+    [Fact]
+    public void IPhoneOS1ImageStoreBootsItsLiveCopyWithoutAnOverlay()
+    {
+        var dir = Base(Board.M68, "iboot", version: "1.0");
+        File.WriteAllText(Path.Combine(dir, "nand", "geometry.json"),
+            "{\"storage_format\": \"nand-xor-blank-v2\", \"blank\": \"ff\", \"board\": \"s5l8900\"}");
+        File.WriteAllBytes(Path.Combine(dir, "nand", "cs0.pages"), [1, 2, 3]);
+        var device = Prepare(Board.M68, dir);
+        var machine = device.Configuration(Hardware("iPhone-2G", "m68ap", cellular: true), Defaults, "s.log").Argv[2];
+        var live = PreparedDevice.LiveNand(Path.Combine(tmp, "data", "overlay"));
+        Assert.Contains(",nand=" + BootRecipe.Escape(live), machine);
+        Assert.DoesNotContain("nand-overlay", machine);
+        Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(live, "cs0.pages")));
+        Directory.CreateDirectory(Path.Combine(tmp, "data", "overlay", "bank0"));
+        Assert.Throws<InvalidDataException>(() => Prepare(Board.M68, dir));
+    }
+
+    /// A 3GS or iPod touch 3G kboot.bin with the IPSW's 0 ncoref-frequency boots an overlay copy with 162 MHz; the
+    /// base stays as it was, a later boot uses the copy as it is, and one that has the value, or an A4's, boots the
+    /// base (HostRuntime's zeroAudioClockBootsARepairedCopy).
+    [Theory]
+    [InlineData("n88ap")]
+    [InlineData("n18ap")]
+    public void ZeroAudioClockBootsARepairedCopy(string boardId)
+    {
+        var board = Board.Find(boardId)!;
+        static byte[] Image(uint hz)
+        {
+            var key = new byte[36];
+            "ncoref-frequency"u8.CopyTo(key);
+            key[32] = 4;
+            return [.. "dt"u8, .. key, .. BitConverter.GetBytes(hz), .. "rest"u8];
+        }
+        var dir = Base(board, "kboot", version: "3.1.3");
+        var kboot = Path.Combine(dir, "kboot.bin");
+        File.WriteAllBytes(kboot, Image(0));
+        var copy = Path.Combine(tmp, "data", "overlay", "kboot.bin");
+        string Machine() => Prepare(board, dir).Configuration(Hardware("n88", boardId), Defaults, "s.log").Argv[2];
+        Assert.Contains(",kboot=" + BootRecipe.Escape(copy) + ",", Machine());
+        Assert.Equal(Image(PreparedDevice.NcorefHz), File.ReadAllBytes(copy));
+        Assert.Equal(Image(0), File.ReadAllBytes(kboot));
+        File.WriteAllText(copy, "kept");
+        Assert.Contains(",kboot=" + BootRecipe.Escape(copy) + ",", Machine());
+        Assert.Equal("kept", File.ReadAllText(copy));
+    }
+
+    [Fact]
+    public void ASetAudioClockOrAnA4BootsTheBase()
+    {
+        var key = new byte[36];
+        "ncoref-frequency"u8.CopyTo(key);
+        key[32] = 4;
+        var dir = Base(Board.N88, "kboot", version: "3.1.3");
+        File.WriteAllBytes(Path.Combine(dir, "kboot.bin"), [.. key, .. BitConverter.GetBytes(PreparedDevice.NcorefHz)]);
+        var machine = Prepare(Board.N88, dir).Configuration(Hardware("n88", "n88ap"), Defaults, "s.log").Argv[2];
+        Assert.Contains(",kboot=" + BootRecipe.Escape(Path.Combine(dir, "kboot.bin")) + ",", machine);
+        Assert.False(File.Exists(Path.Combine(tmp, "data", "overlay", "kboot.bin")));
+        File.WriteAllBytes(Path.Combine(dir, "kboot.bin"), [.. key, 0, 0, 0, 0]);
+        Assert.Equal(Path.Combine(dir, "kboot.bin"), Prepare(Board.N90, dir).BootFile);
+    }
 }
