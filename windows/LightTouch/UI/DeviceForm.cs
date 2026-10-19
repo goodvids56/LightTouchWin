@@ -25,6 +25,7 @@ internal sealed class DeviceForm : Form
     private readonly ToolStripButton internet = new("Internet") { CheckOnClick = false };
     private readonly System.Windows.Forms.Timer pump = new();
     private FileStream? lease;
+    private UsbMux? usbMux;
     private Thread? qemuThread;
     private PreparedDevice? prepared;
     private ulong serial;
@@ -153,7 +154,10 @@ internal sealed class DeviceForm : Form
 
         // QEMU exits at startup when DirectSound has no output device; a PC without one boots silent instead.
         var audio = settings.Audio && WaveOutGetNumDevs() > 0;
-        var options = new BootOptions(record.Network, settings.LocalNetwork, audio, settings.VerboseBoot);
+        // The USB bridge listens before the guest's USB core comes up and dials it.
+        usbMux = UsbMux.Start(Path.Combine(record.Data, "usbmuxd"), Path.Combine(record.Logs, "usbmuxd.log"));
+        var options = new BootOptions(record.Network, settings.LocalNetwork, audio, settings.VerboseBoot,
+            UsbAddress: usbMux?.GuestAddress);
         var config = device.Configuration(hardware, options, Path.Combine(record.Logs, "serial.log"));
         restricted = record.Network && device.ExpectsSetup;
         internet.Visible = restricted;
@@ -450,6 +454,7 @@ internal sealed class DeviceForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         base.OnFormClosed(e);
+        usbMux?.Dispose();
         lease?.Dispose();
     }
 

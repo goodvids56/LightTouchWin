@@ -53,8 +53,44 @@ internal static partial class ChildProcess
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool CloseHandle(IntPtr handle);
 
-    /// `arguments` quoted as the C runtime parses them.
-    public static Process Start(string executable, IEnumerable<string> arguments, string log)
+    [StructLayout(LayoutKind.Sequential)]
+    private struct JobLimits
+    {
+        public long PerProcessUserTimeLimit, PerJobUserTimeLimit;
+        public uint LimitFlags;
+        public UIntPtr MinimumWorkingSetSize, MaximumWorkingSetSize;
+        public uint ActiveProcessLimit;
+        public UIntPtr Affinity;
+        public uint PriorityClass, SchedulingClass;
+        public ulong ReadOperationCount, WriteOperationCount, OtherOperationCount;
+        public ulong ReadTransferCount, WriteTransferCount, OtherTransferCount;
+        public UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
+    }
+
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateJobObjectW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    private static partial IntPtr CreateJobObject(IntPtr attributes, string? name);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SetInformationJobObject(IntPtr job, int infoClass, ref JobLimits info, int length);
+
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+
+    /// A job that kills its processes when this process ends however it ends: the device's usbmuxd never outlives it.
+    private static readonly Lazy<IntPtr> CompanionJob = new(() =>
+    {
+        const int ExtendedLimitInformation = 9;
+        const uint KillOnJobClose = 0x2000;
+        var job = CreateJobObject(IntPtr.Zero, null);
+        var limits = new JobLimits { LimitFlags = KillOnJobClose };
+        SetInformationJobObject(job, ExtendedLimitInformation, ref limits, Marshal.SizeOf<JobLimits>());
+        return job;
+    });
+
+    /// `arguments` quoted as the C runtime parses them. `companion`: the process ends when this one does.
+    public static Process Start(string executable, IEnumerable<string> arguments, string log, bool companion = false)
     {
         const uint GenericWrite = 0x40000000, ShareRead = 1, ShareWrite = 2, CreateAlways = 2, Normal = 0x80;
         var security = new SecurityAttributes { nLength = Marshal.SizeOf<SecurityAttributes>(), bInheritHandle = 1 };
@@ -77,9 +113,10 @@ internal static partial class ChildProcess
             {
                 throw new Win32Exception(Marshal.GetLastPInvokeError());
             }
+            if (companion) AssignProcessToJobObject(CompanionJob.Value, info.hProcess);
             CloseHandle(info.hThread);
-            CloseHandle(info.hProcess);
-            return Process.GetProcessById(info.dwProcessId);
+            try { return Process.GetProcessById(info.dwProcessId); }
+            finally { CloseHandle(info.hProcess); }
         }
         finally
         {

@@ -1,5 +1,5 @@
 // argv for one boot, from paths alone: HostRuntime's BootRecipe.swift and PreparedDeviceBoot.configuration, with
-// Windows' audio (DirectSound) in place of CoreAudio and no web proxy or USB bridge yet.
+// Windows' audio (DirectSound) in place of CoreAudio.
 
 namespace LightTouch.Device;
 
@@ -37,7 +37,9 @@ internal static class BootRecipe
             + $",direct-iboot={Escape(d.Strategy == "bootrom" ? "" : d.BootFile)},direct-llb="
             + $",bootrom={Escape(d.BootRom)},nand={Escape(d.Nand)},nor={Escape(d.BaseNor)}"
             + $",nor-rw={Escape(d.WritableNor ?? "")}" + (d.NandOverlay is { } overlay ? $",nandrw={Escape(overlay)}" : "");
-        // No USB bridge on Windows yet: osk types host keys on the guest's own keyboard.
+        // osk types host keys by tapping the guest's own keyboard; the Mac turns it on with the USB bridge, and the
+        // Windows build always does, so typing works without one too.
+        if (o.UsbAddress is { } usb) machine += $",usb-tcp-addr={usb}";
         machine += ",osk=on";
         if (o.Network) machine += ",wifi=on";
         if (d.GidBlobs is { } blobs) machine += $",gid-blobs={Escape(blobs)}";
@@ -54,6 +56,7 @@ internal static class BootRecipe
         var machine =
             $"{machineName},bootrom={Escape(d.BootRom)},iboot={Escape(d.BootFile)}"
             + $",nand={Escape(d.Nand)}" + (d.NandOverlay is { } overlay ? $",nand-overlay={Escape(overlay)}" : "")
+            + (o.UsbAddress is { } usb ? $",usb-tcp-addr={usb}" : "")
             + (o.Network ? "" : ",wifi=off") + Options(d.Machine);
         var argv = new List<string>
         {
@@ -82,6 +85,8 @@ internal static class BootRecipe
         };
         machine += $",nand={Escape(d.Nand)}" + (d.NandOverlay is { } overlay ? $",nand-overlay={Escape(overlay)}" : "");
         if (d.DieId is { } dieId) machine += $",die-id={Escape(dieId)}";
+        // Without a bridge the machine's built-in USB host keeps it charging.
+        if (o.UsbAddress is { } usb) machine += $",usb-tcp-addr={usb}";
         if (!o.Network) machine += ",wifi=off";
         if (hasCellular) machine += ",baseband=on";
         machine += Options(d.Machine);
@@ -93,5 +98,6 @@ internal static class BootRecipe
     }
 }
 
-/// What the person chose for this boot.
-internal sealed record BootOptions(bool Network, bool LocalNetwork, bool Audio, bool VerboseBoot, int RefreshHz = 60);
+/// What the person chose for this boot, and the boot's USB bridge (usbmuxd's address for usb-tcp-addr), if any.
+internal sealed record BootOptions(bool Network, bool LocalNetwork, bool Audio, bool VerboseBoot, int RefreshHz = 60,
+    string? UsbAddress = null);
